@@ -1,0 +1,64 @@
+{
+  "cust_00985943": {
+    "id": "cust_00985943",
+    "org": "Acme Inc.",
+    "email": "ops@acme.com",
+    "tier": "manager",
+    "status": "active",
+    "createdAt": 1782213428569,
+    "byob": {
+      "provider": "openai",
+      "base": "https://api.openai.com/v1",
+      "model": "gpt-4",
+      "apiKey": "sk-secret-123",
+      "configuredAt": 1782213428567
+    },
+    "infra": {
+      "id": "cust_00985943",
+      "tier": "manager",
+      "phone": {
+        "number": "+14157149366",
+        "sid": "SIMNUM-cust_00985943",
+        "simulated": true
+      },
+      "email": {
+        "address": "cust_00985943.agent@aethermesh.dev",
+        "provider": "simulated"
+      },
+      "vm": {
+        "id": "SIMVM-cust_00985943",
+        "image": "aether/tenant-runtime:latest",
+        "status": "running",
+        "simulated": true
+      },
+      "browser": {
+        "status": "lazy"
+      },
+      "provisioned": true,
+      "provisionedAt": 1782213428633,
+      "updatedAt": 1782213428633
+    },
+    "updatedAt": 1782213428691,
+    "subscription": {
+      "subscriptionId": "SIMSUB-cust_00985943",
+      "status": "active",
+      "tier": "manager",
+      "priceUsdMonthly": 299,
+      "simulated": true
+    },
+    "workerSpec": {
+      "command": "python -m aether_core run",
+      "cwd": "aether/core",
+      "env": {
+        "AETHER_TENANT_ID": "cust_00985943",
+        "AETHER_PROFILE": "power",
+        "INFRA_API_BASE": "http://localhost:54209",
+        "INFRA_API_TOKEN": "",
+        "OPENCLAW_GATEWAY_URL": "http://localhost:18789",
+        "HERMES_API_BASE": "https://api.openai.com/v1",
+        "HERMES_API_KEY": "sk-secret-123",
+        "HERMES_MODEL": "gpt-4"
+      }
+    }
+  }
+}

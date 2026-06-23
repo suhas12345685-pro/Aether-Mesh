@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aether Mesh — Customer Console</title>
+  
+  <!-- Inter font from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    :root {
+      /* Colors matching marketing design system */
+      --bg: #050810;
+      --surface: #0D1117;
+      --surface-card: #121824;
+      --border: #1A2332;
+      --border-focus: #374151;
+      --accent: #6366F1;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --accent-hover: #4F46E5;
+      
+      --text: #F0F6FC;
+      --muted: #7D8590;
+      
+      --good: #10B981;
+      --good-dim: rgba(16, 185, 129, 0.1);
+      --warn: #F59E0B;
+      --warn-dim: rgba(245, 158, 11, 0.1);
+      --bad: #EF4444;
+      --bad-dim: rgba(239, 68, 68, 0.1);
+
+      --radius: 12px;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Layout Utility classes */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+
+    /* Button and Input Base */
+    input, select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      transition: var(--transition);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 11px 20px;
+      font-size: 14px;
+      border: none;
+      transition: var(--transition);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: var(--border-focus);
+    }
+    .btn-danger {
+      background: var(--bad);
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Auth Views Layout */
+    .auth-container {
+      max-width: 440px;
+      width: 90%;
+      margin: auto;
+      padding: 40px 0;
+    }
+    .auth-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .auth-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .auth-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* Dashboard Shell */
+    .app-shell {
+      display: flex;
+      flex: 1;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    aside {
+      width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+    .brand-orb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      box-shadow: 0 0 12px var(--accent);
+    }
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+      flex: 1;
+    }
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    .nav-item.active a, .nav-item a:hover {
+      color: var(--text);
+      background: var(--border);
+    }
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Main Console Area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    /* Workspace Content Grid */
+    .content-area {
+      padding: 32px;
+      max-width: 1120px;
+      width: 100%;
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    /* Console Cards */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    /* Status indicators */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pill.ok { background: var(--good-dim); color: var(--good); }
+    .pill.warn { background: var(--warn-dim); color: var(--warn); }
+    .pill.bad { background: var(--bad-dim); color: var(--bad); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Activity Feed layout */
+    .activity-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .activity-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .activity-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--good);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .activity-body {
+      flex: 1;
+      font-size: 13px;
+    }
+    .activity-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(5, 8, 16, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 480px;
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .modal-desc {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* Billing info */
+    .pricing-toggle {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .price-tag {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .price-tag small {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       1. AUTH VIEWS (SIGNUP/LOGIN)
+       ============================================================ -->
+  <div id="authView" class="auth-container">
+    
+    <!-- Login form -->
+    <div id="loginCard" class="auth-card">
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-subtitle">Log in to manage your synthetic employees</div>
+      
+      <div id="loginErr" class="bad" style="margin-bottom: 12px; font-size: 13px;"></div>
+      
+      <label for="loginEmail">Email Address</label>
+      <input type="email" id="loginEmail" placeholder="you@domain.com" />
+      
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" />
+      
+      <button id="login" class="btn-primary" style="width: 100%; margin-top: 12px;">Log In</button>
+      
+      <div style="margin-top: 20px; text-align: center; font-size: 13px; color: var(--muted);">
+        Don't have an account? <a href="#" id="toSignup" style="color: var(--accent); font-weight: 600;">Sign up</a>
+      </div>
+    </div>
+
+    <!-- Signup form -->
+    <div id="signupCard" class="auth-card hidden">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-subtitle">Get started with Aether Mesh today</div>
+      
+      <div id="signupErr" class="bad" style="margin-bottom: 12px; font-size: 13px;"></div>
+      
+      <label for="org">Organization Name</label>
+      <input type="text" id="org" placeholder="Acme Corp" />
+
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="you@domain.com" />
+      
+      <label for="password">Password (min 8 chars)</label>
+      <input type="password" id="password" placeholder="••••••••" />
+
+      <label for="tier">Service Tier</label>
+      <select id="tier">
+        <!-- populated dynamically -->
+      </select>
+
+      <div style="border-top: 1px solid var(--border); margin: 16px 0; padding-top: 16px;">
+        <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px;">Brain Provider (BYOB)</div>
+        
+        <label for="provider">LLM Provider</label>
+        <select id="provider">
+          <!-- populated dynamically -->
+        </select>
+        
+        <label for="model">Model Name</label>
+        <input type="text" id="model" placeholder="claude-3-5-sonnet-20241022" />
+        
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="sk-..." />
+      </div>
+      
+      <button id="signup" class="btn-primary" style="width: 100%;">Create & Onboard</button>
+      
+      <div style="margin-top: 20px; text-align: center; font-size: 13px; color: var(--muted);">
+        Already have an account? <a href="#" id="toLogin" style="color: var(--accent); font-weight: 600;">Log in</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       2. CONSOLE APP SHELL (LOGGED IN)
+       ============================================================ -->
+  <div id="acctView" class="app-shell hidden">
+    
+    <!-- Sidebar Navigation -->
+    <aside>
+      <div class="brand">
+        <div class="brand-orb"></div>
+        <span>Aether Console</span>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" id="navDash"><a href="#" onclick="showSection('dashSection')">Dashboard</a></li>
+        <li class="nav-item" id="navAgent"><a href="#" onclick="showSection('agentSection')">Agent Identity</a></li>
+        <li class="nav-item" id="navBrain"><a href="#" onclick="showSection('brainSection')">BYOB Brain</a></li>
+        <li class="nav-item" id="navAdmin"><a href="#" onclick="showSection('adminSection')">Admin Area</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="logout" class="btn-secondary" style="width: 100%; padding: 8px 12px; font-size: 12px;">Log Out</button>
+        <div style="margin-top: 12px; text-align: center;" id="who"></div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main>
+      <header>
+        <div class="header-title">
+          <h2 id="sectionTitle">Workspace Dashboard</h2>
+        </div>
+        <div class="header-user">
+          <span class="pill ok" id="userTier">Intern</span>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+        <!-- ==================== Section: Dashboard ==================== -->
+        <div id="dashSection" class="section-pane">
+          
+          <div class="grid-2" style="margin-bottom: 24px;">
+            <!-- Tenant Status Info -->
+            <div class="card">
+              <div class="card-title">Local Runtime Stack</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                  <span style="color: var(--muted);">Tenant ID:</span>
+                  <span style="font-family: monospace; font-weight: 600;" id="tenantId">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                  <span style="color: var(--muted);">Billing Status:</span>
+                  <span class="pill ok" id="tenantStatus">Active</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                  <span style="color: var(--muted);">Phone identity:</span>
+                  <span id="phoneNum">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                  <span style="color: var(--muted);">Email address:</span>
+                  <span id="emailAddr">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cloud Deploy Panel -->
+            <div class="card" id="cloudPanel">
+              <div class="card-title">☁️ Cloud Deploy</div>
+              
+              <!-- State A: Not upgraded -->
+              <div id="cloudDeployPromo">
+                <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">
+                  Deploy Aether Mesh to our fully-managed cloud infrastructure. End-to-end encrypted. Zero-knowledge.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <div class="price-tag" id="cloudPriceText" style="margin: 0; font-size: 20px;">$15<small>/month</small></div>
+                  <div style="display: flex; flex-direction: column; width: 120px;">
+                    <label for="paymentMethod" style="font-size: 10px; margin-bottom: 2px;">Gateway</label>
+                    <select id="paymentMethod" style="margin: 0; padding: 4px 8px; font-size: 12px; height: auto;">
+                      <option value="stripe">Stripe</option>
+                      <option value="razorpay">Razorpay</option>
+                    </select>
+                  </div>
+                </div>
+                <button id="btnUpgradeCloud" class="btn-primary" style="width: 100%;">Add Cloud Deploy</button>
+              </div>
+
+              <!-- State B: Upgraded / Active -->
+              <div id="cloudDeployStatus" class="hidden">
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Cloud URL:</span>
+                    <a href="#" id="cloudUrl" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: underline;">acme.aethermesh.app</a>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Container Status:</span>
+                    <span class="pill ok" id="cloudContainerStatus">Running</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Uptime:</span>
+                    <span id="cloudUptime">24h 12m</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                  <button id="btnOpenCloud" class="btn-secondary" style="flex: 1;">Open Console</button>
+                  <button id="btnRemoveCloud" class="btn-danger" style="padding: 10px 14px;">Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="card">
+            <div class="card-title">Activity Feed (Heartbeats)</div>
+            <div class="activity-feed" id="activityFeed">
+              <!-- Dynamically populated activity rows -->
+              <div class="muted" style="text-align: center; padding: 20px;">No recent activity.</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== Section: Agent Identity ==================== -->
+        <div id="agentSection" class="section-pane hidden">
+          <div class="card" style="max-width: 560px; margin-bottom: 24px;">
+            <div class="card-title">Synthetic Employee Identity</div>
+
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px; padding:16px; background:var(--accent-glow); border-radius:10px; border:1px solid rgba(99,102,241,0.3);">
+              <div id="agentAvatar" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#818CF8);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;">A</div>
+              <div>
+                <div id="agentName" style="font-size:20px;font-weight:700;">—</div>
+                <div id="agentOrg" style="font-size:13px;color:var(--muted);">—</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
+                <span style="color:var(--muted);">📧 Email address</span>
+                <span id="agentEmail" style="font-family:monospace;">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
+                <span style="color:var(--muted);">📱 Phone number</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="agentPhone" style="font-family:monospace;">—</span>
+                  <button id="btnChangePhone" class="btn-secondary" style="padding:4px 10px;font-size:12px;">Change</button>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:14px;">
+                <span style="color:var(--muted);">Email provider</span>
+                <span id="agentEmailProvider" class="pill ok">simulated</span>
+              </div>
+            </div>
+
+            <div id="phoneSelectMsg" style="margin-top:16px;font-size:13px;"></div>
+          </div>
+        </div>
+
+        <!-- ==================== Section: Brain ==================== -->
+        <div id="brainSection" class="section-pane hidden">
+          <div class="card" style="max-width: 600px;">
+            <div class="card-title">BYOB Configuration</div>
+            <div id="brainUpdateMsg" style="margin-bottom: 12px; font-size: 14px;"></div>
+            
+            <label for="brainProvider">LLM Provider</label>
+            <select id="brainProvider">
+              <!-- populated dynamically -->
+            </select>
+            
+            <label for="brainModel">Model Name</label>
+            <input type="text" id="brainModel" placeholder="claude-3-5-sonnet-20241022" />
+            
+            <label for="brainApiKey">API Key</label>
+            <input type="password" id="brainApiKey" placeholder="sk-..." />
+
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button id="btnSaveBrain" class="btn-primary">Update Brain Settings</button>
+              <button id="btnResetE2E" class="btn-secondary">Setup E2E Encryption</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== Section: Admin Area ==================== -->
+        <div id="adminSection" class="section-pane hidden">
+          
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-title">All Customer Accounts</div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Org Name</th>
+                    <th>Email</th>
+                    <th>Tier</th>
+                    <th>Status</th>
+                    <th>Inbound Phone</th>
+                    <th>Inbound Email</th>
+                  </tr>
+                </thead>
+                <tbody id="customersList">
+                  <!-- dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Platform Audit Log</div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Customer ID</th>
+                    <th>Actor</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="auditList">
+                  <!-- dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ============================================================
+       3. E2E MASTER PASSWORD MODAL
+       ============================================================ -->
+  <div id="e2eModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-title">🔐 Client-Side Encryption Key</div>
+      <div class="modal-desc">
+        Choose a master password to encrypt your API keys. We store only ciphertext and never see your password. If you lose it, your agent cannot fetch its keys.
+      </div>
+      
+      <div id="e2eErr" class="bad" style="margin-bottom: 12px; font-size: 13px;"></div>
+
+      <label for="masterPw">Master Password</label>
+      <input type="password" id="masterPw" placeholder="At least 8 characters" />
+      
+      <label for="masterPwConfirm">Confirm Master Password</label>
+      <input type="password" id="masterPwConfirm" placeholder="Re-enter password" />
+
+      <div style="display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end;">
+        <button id="btnSkipE2E" class="btn-secondary">Skip (Server Managed)</button>
+        <button id="btnSubmitE2E" class="btn-primary">Enable Encryption</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       4. PHONE NUMBER PICKER MODAL
+       ============================================================ -->
+  <div id="phonePickerModal" class="modal-backdrop hidden">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-title">📱 Choose Your Agent's Phone Number</div>
+      <div class="modal-desc">Search available Twilio numbers by area code and select one for your agent. The number is instantly configured and ready to receive SMS.</div>
+
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <input type="text" id="areaCodeInput" placeholder="Area code (e.g. 415)" style="max-width:180px;margin:0;" />
+        <button id="btnSearchNumbers" class="btn-secondary" style="padding:10px 16px;white-space:nowrap;">Search</button>
+      </div>
+
+      <div id="phonePickerErr" class="bad" style="margin-bottom:12px;font-size:13px;"></div>
+      <div id="phoneNumbersList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px;"></div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button id="btnClosePhonePicker" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script type="module">
+    // Helper function for dollar selection
+    const $ = (id) => document.getElementById(id);
+
+    // E2E Encryption helpers using inline Web Crypto API (replaces /shared/e2e.mjs import in case static serving fails)
+    async function bytesToBase64(bytes) {
+      let binary = '';
+      const arr = new Uint8Array(bytes);
+      const len = arr.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(arr[i]);
+      }
+      return btoa(binary);
+    }
+
+    async function base64ToBytes(base64) {
+      const binary = atob(base64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    async function deriveKey(password, email) {
+      const enc = new TextEncoder();
+      const passwordBytes = enc.encode(password);
+      const saltBytes = enc.encode(email);
+      const baseKey = await window.crypto.subtle.importKey(
+        "raw",
+        passwordBytes,
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+      return await window.crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: saltBytes,
+          iterations: 200000,
+          hash: "SHA-256"
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptSecret(key, plaintext) {
+      const enc = new TextEncoder();
+      const plaintextBytes = enc.encode(plaintext);
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const ciphertextBuffer = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        plaintextBytes
+      );
+      const ivB64 = await bytesToBase64(iv);
+      const ciphertextB64 = await bytesToBase64(new Uint8Array(ciphertextBuffer));
+      return `${ivB64}:${ciphertextB64}`;
+    }
+
+    // Platform API HTTP client
+    async function api(path, method = "GET", body = null) {
+      const opts = { method, headers: {} };
+      if (body) {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+      const r = await fetch(path, opts);
+      if (r.status === 204) return null;
+      const res = await r.json();
+      if (!r.ok) throw new Error(res.error || `HTTP error ${r.status}`);
+      return res;
+    }
+
+    // Toggle navigation panels
+    window.showSection = (sectionId) => {
+      document.querySelectorAll(".section-pane").forEach(pane => pane.classList.add("hidden"));
+      $(sectionId).classList.remove("hidden");
+      document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+      const titles = {
+        dashSection:  ["Workspace Dashboard",      "navDash"],
+        agentSection: ["Agent Identity",           "navAgent"],
+        brainSection: ["BYOB Brain Config",        "navBrain"],
+        adminSection: ["System Administration",    "navAdmin"],
+      };
+      const [title, navId] = titles[sectionId] || ["Dashboard", "navDash"];
+      $("sectionTitle").textContent = title;
+      if ($(navId)) $(navId).classList.add("active");
+    };
+
+    // Load available subscription tiers
+    async function loadTiers() {
+      try {
+        const tiers = await api("/api/tiers");
+        $("tier").innerHTML = tiers.map(t => 
+          `<option value="${t.id}">${t.name} ($${t.priceUsdMonthly || 'Custom'}/mo)</option>`
+        ).join("");
+      } catch (err) {
+        console.error("Failed to load tiers", err);
+      }
+    }
+
+    // Load LLM providers list
+    async function loadProviders() {
+      try {
+        const providers = await api("/api/byob/providers");
+        const listHtml = providers.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+        $("provider").innerHTML = listHtml;
+        $("brainProvider").innerHTML = listHtml;
+      } catch (err) {
+        console.error("Failed to load providers", err);
+      }
+    }
+
+    // Render client details
+    let currentCustomer = null;
+    function renderAccount(c) {
+      currentCustomer = c;
+      $("tenantId").textContent = c.id;
+      $("tenantStatus").textContent = c.status;
+      $("phoneNum").textContent = c.infra?.phone?.number || "—";
+      $("emailAddr").textContent = c.infra?.email?.address || "—";
+      $("userTier").textContent = c.tier.toUpperCase() + " TIER";
+
+      // Agent Identity section
+      const name = c.infra?.persona?.name || "—";
+      const initials = name !== "—" ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "A";
+      $("agentAvatar").textContent = initials;
+      $("agentName").textContent = name;
+      $("agentOrg").textContent = c.org || "—";
+      $("agentEmail").textContent = c.infra?.email?.address || "—";
+      $("agentPhone").textContent = c.infra?.phone?.number || "—";
+      const provider = c.infra?.email?.provider || "simulated";
+      $("agentEmailProvider").textContent = provider;
+      $("agentEmailProvider").className = `pill ${provider === "simulated" ? "bad" : "ok"}`;
+
+      // Form fill BYOB
+      if (c.byob) {
+        $("brainProvider").value = c.byob.provider || "anthropic";
+        $("brainModel").value = c.byob.model || "";
+        $("brainApiKey").value = c.byob.apiKey || ""; // redacted or encrypted client-side
+      }
+
+      // Cloud Deploy Panel
+      if (c.cloudDeploy) {
+        $("cloudDeployPromo").classList.add("hidden");
+        $("cloudDeployStatus").classList.remove("hidden");
+        $("cloudUrl").href = c.cloudDeploy.url || "#";
+        $("cloudUrl").textContent = c.cloudDeploy.url ? c.cloudDeploy.url.replace("https://", "") : "acme.aethermesh.app";
+        $("cloudContainerStatus").textContent = c.cloudDeploy.status || "Running";
+        $("cloudUptime").textContent = c.cloudDeploy.uptime ? `${c.cloudDeploy.uptime}h` : "Just deployed";
+      } else {
+        $("cloudDeployPromo").classList.remove("hidden");
+        $("cloudDeployStatus").classList.add("hidden");
+        // Cloud addon prices
+        const addonPrices = { intern: "$15/mo", manager: "$29/mo", enterprise: "Custom" };
+        $("cloudPriceText").innerHTML = `${addonPrices[c.tier] || '$15/mo'}<small>/month</small>`;
+      }
+    }
+
+    // Activity log loading
+    async function loadActivity(customerId) {
+      try {
+        const feed = $("activityFeed");
+        const activities = await api(`/api/customers/${customerId}/activity`);
+        if (!activities || activities.length === 0) {
+          feed.innerHTML = `<div class="muted text-center" style="padding:20px;">No heartbeats recorded.</div>`;
+          return;
+        }
+        feed.innerHTML = activities.map(act => `
+          <div class="activity-row">
+            <div class="activity-icon" style="background: ${act.status==='ok'?'var(--good)':'var(--bad)'}"></div>
+            <div class="activity-body">
+              <div style="font-weight:600; display:flex; justify-content:space-between;">
+                <span>${act.summary}</span>
+                <span class="muted" style="font-size:11px;">${new Date(act.timestamp).toLocaleTimeString()}</span>
+              </div>
+              <div class="activity-meta">
+                Checked: ${act.conversations} | Tasks: ${act.tasks_detected} | Sent: ${act.deliverables_sent}
+              </div>
+            </div>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error("Failed to load activities", err);
+      }
+    }
+
+    // Admin lists
+    async function loadCustomersAdmin() {
+      try {
+        const customers = await api("/api/customers");
+        $("customersList").innerHTML = customers.map(c => `
+          <tr>
+            <td><strong>${c.org}</strong></td>
+            <td>${c.email}</td>
+            <td><span class="pill ok">${c.tier}</span></td>
+            <td><span class="pill ${c.status==='active'?'ok':'bad'}">${c.status}</span></td>
+            <td>${c.infra?.phone?.number || "—"}</td>
+            <td>${c.infra?.email?.address || "—"}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadAuditLogs() {
+      try {
+        const audits = await api("/api/audit");
+        $("auditList").innerHTML = audits.map(a => `
+          <tr>
+            <td style="color:var(--muted);">${new Date(a.ts).toLocaleString()}</td>
+            <td><span class="pill ok">${a.event}</span></td>
+            <td><code style="font-size:11px;">${a.customerId || '—'}</code></td>
+            <td>${a.actor || 'system'}</td>
+            <td style="color:var(--muted); font-size:12px;">${JSON.stringify(a.meta || {})}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Session status refresh
+    async function refresh() {
+      try {
+        const me = (await api("/api/auth/me")).customer;
+        const loggedIn = !!me;
+        
+        $("authView").classList.toggle("hidden", loggedIn);
+        $("acctView").classList.toggle("hidden", !loggedIn);
+        $("who").textContent = loggedIn ? `${me.email} (${me.role})` : "";
+        
+        if (loggedIn) {
+          renderAccount(me);
+          loadActivity(me.id);
+          
+          const admin = me.role === "admin";
+          $("navAdmin").classList.toggle("hidden", !admin);
+          if (admin) {
+            loadCustomersAdmin();
+            loadAuditLogs();
+          }
+
+          // Check if E2E Encryption is already configured in this session or needs master key
+          if (me.byob?.isE2E && !sessionStorage.getItem("masterKey")) {
+            $("e2eModal").classList.remove("hidden");
+          }
+        }
+      } catch (err) {
+        console.error("Refresh status check failed", err);
+      }
+    }
+
+    // --- Authentication Actions ---
+    $("signup").onclick = async () => {
+      $("signup").disabled = true; $("signupErr").textContent = "";
+      try {
+        const payload = {
+          org: $("org").value,
+          email: $("email").value,
+          password: $("password").value,
+          tier: $("tier").value,
+          byob: {
+            provider: $("provider").value,
+            model: $("model").value,
+            apiKey: $("apiKey").value
+          }
+        };
+        const res = await api("/api/signup", "POST", payload);
+        // Prompt for E2E modal on success
+        $("e2eModal").classList.remove("hidden");
+        await refresh();
+      } catch (err) {
+        $("signupErr").textContent = err.message;
+      } finally {
+        $("signup").disabled = false;
+      }
+    };
+
+    $("login").onclick = async () => {
+      $("login").disabled = true; $("loginErr").textContent = "";
+      try {
+        const payload = { email: $("loginEmail").value, password: $("loginPassword").value };
+        await api("/api/auth/login", "POST", payload);
+        await refresh();
+      } catch (err) {
+        $("loginErr").textContent = err.message;
+      } finally {
+        $("login").disabled = false;
+      }
+    };
+
+    $("logout").onclick = async () => {
+      await api("/api/auth/logout", "POST");
+      sessionStorage.clear();
+      currentCustomer = null;
+      await refresh();
+    };
+
+    // Card switcher helpers
+    $("toSignup").onclick = (e) => {
+      e.preventDefault();
+      $("loginCard").classList.add("hidden");
+      $("signupCard").classList.remove("hidden");
+    };
+    $("toLogin").onclick = (e) => {
+      e.preventDefault();
+      $("signupCard").classList.add("hidden");
+      $("loginCard").classList.remove("hidden");
+    };
+
+    // --- Cloud Deploy Actions ---
+    $("btnUpgradeCloud").onclick = async () => {
+      $("btnUpgradeCloud").disabled = true;
+      try {
+        const gateway = $("paymentMethod")?.value || "stripe";
+        if (gateway === "stripe") {
+          const res = await api("/api/billing/checkout", "POST", { addCloudDeploy: true });
+          if (res?.url) {
+            window.location.href = res.url;
+          }
+        } else {
+          // Razorpay Checkout flow
+          const order = await api("/api/billing/razorpay/order", "POST", { addCloudDeploy: true });
+          if (order.simulated) {
+            const pay = confirm(`Simulating Razorpay Order ID: ${order.orderId}\n\nAmount: INR ${order.amount / 100}\n\nClick OK to simulate successful payment, Cancel to abort.`);
+            if (pay) {
+              await api("/api/billing/razorpay/verify", "POST", {
+                razorpayPaymentId: `pay_sim_${Math.random().toString(36).substring(2, 10)}`,
+                razorpayOrderId: order.orderId,
+                razorpaySignature: "simulated_success",
+                addCloudDeploy: true
+              });
+              alert("Payment simulated successfully! Cloud deployment active.");
+              await refresh();
+            }
+          } else {
+            const options = {
+              key: order.keyId,
+              amount: order.amount,
+              currency: order.currency,
+              name: "Aether Mesh",
+              description: "Aether Cloud Deploy Subscription",
+              order_id: order.orderId,
+              handler: async function (response) {
+                try {
+                  await api("/api/billing/razorpay/verify", "POST", {
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpaySignature: response.razorpay_signature,
+                    addCloudDeploy: true
+                  });
+                  alert("Payment verified successfully! Cloud deployment active.");
+                  await refresh();
+                } catch (e) {
+                  alert("Payment verification failed: " + e.message);
+                }
+              },
+              prefill: {
+                email: currentCustomer?.email || "",
+                name: currentCustomer?.org || ""
+              },
+              theme: {
+                color: "#6366F1"
+              }
+            };
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+          }
+        }
+      } catch (err) {
+        alert("Upgrade failed: " + err.message);
+      } finally {
+        $("btnUpgradeCloud").disabled = false;
+      }
+    };
+
+    $("btnRemoveCloud").onclick = async () => {
+      if (!confirm("Are you absolutely sure you want to stop and remove Aether from the cloud? All cloud data will be purged.")) return;
+      $("btnRemoveCloud").disabled = true;
+      try {
+        await api(`/api/customers/${currentCustomer.id}/cloud`, "DELETE");
+        await refresh();
+      } catch (err) {
+        alert("deprovision request failed: " + err.message);
+      } finally {
+        $("btnRemoveCloud").disabled = false;
+      }
+    };
+
+    $("btnOpenCloud").onclick = () => {
+      if (currentCustomer?.cloudDeploy?.url) {
+        window.open(currentCustomer.cloudDeploy.url, "_blank");
+      }
+    };
+
+    // --- E2E Master Password Handling ---
+    $("btnSkipE2E").onclick = () => {
+      $("e2eModal").classList.add("hidden");
+    };
+
+    $("btnResetE2E").onclick = () => {
+      $("e2eModal").classList.remove("hidden");
+    };
+
+    $("btnSubmitE2E").onclick = async () => {
+      const pw = $("masterPw").value;
+      const pwConf = $("masterPwConfirm").value;
+      $("e2eErr").textContent = "";
+
+      if (pw.length < 8) {
+        $("e2eErr").textContent = "Password must be at least 8 characters.";
+        return;
+      }
+      if (pw !== pwConf) {
+        $("e2eErr").textContent = "Passwords do not match.";
+        return;
+      }
+
+      $("btnSubmitE2E").disabled = true;
+      try {
+        // Derive key client-side
+        const email = currentCustomer ? currentCustomer.email : $("email").value;
+        const key = await deriveKey(pw, email);
+
+        // Export derived key to base64 so we can put it in sessionStorage
+        const exportedKeyB64 = await bytesToBase64(await window.crypto.subtle.exportKey("raw", key));
+        sessionStorage.setItem("masterKey", exportedKeyB64);
+
+        // Check if there is an API key to encrypt
+        const rawApiKey = $("apiKey").value || $("brainApiKey").value;
+        if (rawApiKey && !rawApiKey.startsWith("••••")) {
+          // Encrypt API key client-side
+          const encryptedVal = await encryptSecret(key, rawApiKey);
+
+          // PATCH settings to server
+          await api(`/api/customers/${currentCustomer.id}/byob`, "PATCH", {
+            apiKeyEnc: encryptedVal,
+            isE2E: true
+          });
+        } else {
+          // If no API key was typed, just update isE2E flag
+          await api(`/api/customers/${currentCustomer.id}/byob`, "PATCH", {
+            isE2E: true
+          });
+        }
+
+        $("e2eModal").classList.add("hidden");
+        $("brainUpdateMsg").innerHTML = `<span class="good">E2E Client-side encryption successfully enabled!</span>`;
+        await refresh();
+      } catch (err) {
+        $("e2eErr").textContent = "Encryption setup failed: " + err.message;
+      } finally {
+        $("btnSubmitE2E").disabled = false;
+      }
+    };
+
+    // --- Brain Settings Update ---
+    $("btnSaveBrain").onclick = async () => {
+      $("btnSaveBrain").disabled = true;
+      $("brainUpdateMsg").textContent = "";
+      try {
+        const rawApiKey = $("brainApiKey").value;
+        const provider = $("brainProvider").value;
+        const model = $("brainModel").value;
+
+        const masterKeyB64 = sessionStorage.getItem("masterKey");
+        if (masterKeyB64 && rawApiKey && !rawApiKey.startsWith("••••")) {
+          // E2E encryption is active — encrypt client-side
+          const keyBytes = await base64ToBytes(masterKeyB64);
+          const key = await window.crypto.subtle.importKey(
+            "raw",
+            keyBytes,
+            { name: "AES-GCM" },
+            true,
+            ["encrypt", "decrypt"]
+          );
+          const ciphertext = await encryptSecret(key, rawApiKey);
+
+          await api(`/api/customers/${currentCustomer.id}/byob`, "PATCH", {
+            provider,
+            model,
+            apiKeyEnc: ciphertext,
+            isE2E: true
+          });
+        } else {
+          // Standard server-side encryption
+          await api(`/api/customers/${currentCustomer.id}/byob`, "POST", {
+            provider,
+            model,
+            apiKey: rawApiKey
+          });
+        }
+        
+        $("brainUpdateMsg").innerHTML = `<span class="good">BYOB Brain settings successfully updated!</span>`;
+        await refresh();
+      } catch (err) {
+        $("brainUpdateMsg").innerHTML = `<span class="bad">Failed: ${err.message}</span>`;
+      } finally {
+        $("btnSaveBrain").disabled = false;
+      }
+    };
+
+    // --- Phone Number Picker ---
+    $("btnChangePhone").onclick = () => {
+      $("phonePickerErr").textContent = "";
+      $("phoneNumbersList").innerHTML = "";
+      $("areaCodeInput").value = "";
+      $("phonePickerModal").classList.remove("hidden");
+    };
+
+    $("btnClosePhonePicker").onclick = () => $("phonePickerModal").classList.add("hidden");
+
+    $("btnSearchNumbers").onclick = async () => {
+      $("btnSearchNumbers").disabled = true;
+      $("phonePickerErr").textContent = "";
+      $("phoneNumbersList").innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">Searching…</div>`;
+      try {
+        const areaCode = $("areaCodeInput").value.trim() || "415";
+        const numbers = await api(`/api/provision/phone-numbers?areaCode=${encodeURIComponent(areaCode)}&limit=8`);
+        if (!numbers || numbers.length === 0) {
+          $("phoneNumbersList").innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No numbers found for that area code.</div>`;
+          return;
+        }
+        $("phoneNumbersList").innerHTML = numbers.map(n => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+            <div>
+              <div style="font-family:monospace;font-weight:600;">${n.phoneNumber}</div>
+              <div style="font-size:12px;color:var(--muted);">${n.locality || ""}${n.locality && n.region ? ", " : ""}${n.region || ""}${n.simulated ? " (demo)" : ""}</div>
+            </div>
+            <button class="btn-primary" style="padding:6px 14px;font-size:13px;" onclick="confirmSelectPhone('${n.phoneNumber}')">Select</button>
+          </div>
+        `).join("");
+      } catch (err) {
+        $("phonePickerErr").textContent = "Search failed: " + err.message;
+        $("phoneNumbersList").innerHTML = "";
+      } finally {
+        $("btnSearchNumbers").disabled = false;
+      }
+    };
+
+    window.confirmSelectPhone = async (phoneNumber) => {
+      if (!currentCustomer) return;
+      $("phonePickerErr").textContent = "";
+      try {
+        const updated = await api(`/api/customers/${currentCustomer.id}/phone`, "POST", { phoneNumber });
+        $("phonePickerModal").classList.add("hidden");
+        renderAccount(updated.customer || updated);
+        $("phoneSelectMsg").innerHTML = `<span class="good">Phone number ${phoneNumber} is now live.</span>`;
+        await refresh();
+      } catch (err) {
+        $("phonePickerErr").textContent = "Could not select number: " + err.message;
+      }
+    };
+
+    // Initialize page
+    loadTiers();
+    loadProviders();
+    refresh();
+  </script>
+</body>
+</html>

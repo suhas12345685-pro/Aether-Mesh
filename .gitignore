@@ -1,0 +1,72 @@
+# Git backups
+**/.git_backup/
+.git_backup/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+npm-shrinkwrap.json
+
+# Build and compilation outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+bin/
+obj/
+*.exe
+*.dll
+*.so
+*.dylib
+*.log
+
+# Databases and database temp files
+*.db
+*.db-wal
+*.db-shm
+data/**/*.db
+data/**/*.db-wal
+data/**/*.db-shm
+
+# Python environments and cache
+.venv/
+env/
+venv/
+ENV/
+pyvenv.cfg
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Tauri specific ignores
+aether/app/desktop/src-tauri/target/
+
+# OS files
+.DS_Store
+Thumbs.db

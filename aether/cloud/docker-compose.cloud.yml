@@ -1,0 +1,212 @@
+# =============================================================================
+# Aether Mesh — Cloud Production Compose
+# Usage:
+#   cp cloud/.env.cloud.example cloud/.env.cloud   # fill in secrets
+#   docker compose -f cloud/docker-compose.cloud.yml --env-file cloud/.env.cloud up -d
+# =============================================================================
+
+name: aether-cloud
+
+# ---------------------------------------------------------------------------
+# Shared networking — only nginx touches the outside world
+# ---------------------------------------------------------------------------
+networks:
+  aether-internal:
+    driver: bridge
+    internal: true          # no direct external routing from service containers
+  aether-public:
+    driver: bridge          # nginx sits on this AND aether-internal
+
+# ---------------------------------------------------------------------------
+# Named volumes — survive container restarts / redeploys
+# ---------------------------------------------------------------------------
+volumes:
+  aether-platform-data:
+  aether-infra-data:
+  aether-workspace:
+  nginx-certs:              # certbot writes here; nginx reads from here
+  nginx-webroot:            # ACME HTTP-01 challenge webroot
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # --------------------------------------------------------------------------
+  # Aether Stack — all five services in one container
+  # --------------------------------------------------------------------------
+  aether:
+    image: ghcr.io/aethermesh/aether-stack:${AETHER_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    networks:
+      - aether-internal
+    volumes:
+      - aether-platform-data:/app/data/platform
+      - aether-infra-data:/app/data/infra
+      - aether-workspace:/app/workspace
+      # Docker socket for tenant VM provisioning (only if INFRA_VM_REAL=true)
+      # Uncomment when running cloud provisioning:
+      # - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NODE_ENV: production
+      LOG_JSON: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AETHER_LOG_JSON: "true"
+
+      # Master encryption key — REQUIRED in production
+      AETHER_SECRET_KEY: ${AETHER_SECRET_KEY}
+
+      # Tenancy
+      AETHER_TENANT_ID:    ${AETHER_TENANT_ID:-cloud-admin}
+      AETHER_PROFILE:      ${AETHER_PROFILE:-power}
+
+      # Infra service
+      INFRA_PORT:          "8090"
+      INFRA_DB_FILE:       /app/data/infra/infra.db
+      INFRA_ADMIN_TOKEN:   ${INFRA_ADMIN_TOKEN}
+      INFRA_API_TOKEN:     ${INFRA_API_TOKEN}
+
+      # VM / Docker provisioning
+      INFRA_VM_REAL:       ${INFRA_VM_REAL:-false}
+      VM_IMAGE:            ${VM_IMAGE:-ghcr.io/aethermesh/aether-stack:latest}
+      VM_MEMORY_MB:        ${VM_MEMORY_MB:-512}
+      VM_CPUS:             ${VM_CPUS:-1}
+      VM_PIDS_LIMIT:       ${VM_PIDS_LIMIT:-256}
+      DOCKER_HOST:         ${DOCKER_HOST:-}
+
+      # Twilio
+      INFRA_TWILIO_REAL:   ${INFRA_TWILIO_REAL:-false}
+      TWILIO_ACCOUNT_SID:  ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN:   ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_AREA_CODE:    ${TWILIO_AREA_CODE:-415}
+
+      # Email
+      INFRA_EMAIL_REAL:    ${INFRA_EMAIL_REAL:-false}
+      SMTP_HOST:           ${SMTP_HOST:-}
+      SMTP_PORT:           ${SMTP_PORT:-587}
+      SMTP_USER:           ${SMTP_USER:-}
+      SMTP_PASS:           ${SMTP_PASS:-}
+      EMAIL_DOMAIN:        ${EMAIL_DOMAIN:-aethermesh.dev}
+      AGENT_EMAIL_DOMAIN:  ${AGENT_EMAIL_DOMAIN:-agent.aethermesh.dev}
+
+      # Inbound email
+      INFRA_INBOUND_REAL:  ${INFRA_INBOUND_REAL:-false}
+      MAILGUN_WEBHOOK_SIGNING_KEY: ${MAILGUN_WEBHOOK_SIGNING_KEY:-}
+
+      # Browser sandbox
+      INFRA_BROWSER_REAL:  ${INFRA_BROWSER_REAL:-false}
+      BROWSER_MAX_SESSIONS: ${BROWSER_MAX_SESSIONS:-25}
+
+      # Platform service
+      PLATFORM_PORT:       "8080"
+      PLATFORM_DB_FILE:    /app/data/platform/platform.db
+      PLATFORM_SESSION_SECRET: ${PLATFORM_SESSION_SECRET}
+      PLATFORM_ADMIN_TOKEN:    ${PLATFORM_ADMIN_TOKEN}
+      PLATFORM_PUBLIC_URL:     https://${DOMAIN}
+      PLATFORM_BILLING_REAL:   ${PLATFORM_BILLING_REAL:-false}
+      STRIPE_SECRET_KEY:       ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET:   ${STRIPE_WEBHOOK_SECRET:-}
+
+      # Supervisor
+      SUPERVISOR_HEALTH_PORT: "8091"
+      SUPERVISOR_RECONCILE_MS: ${SUPERVISOR_RECONCILE_MS:-30000}
+      PYTHON_BIN: python3
+      AETHER_CORE_CWD: /app/core
+
+      # Brain / Channels
+      HERMES_API_BASE:     ${HERMES_API_BASE:-}
+      HERMES_API_KEY:      ${HERMES_API_KEY:-}
+      HERMES_MODEL:        ${HERMES_MODEL:-hermes}
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL:-}
+      OPENCLAW_TOKEN:      ${OPENCLAW_TOKEN:-}
+
+      # Cloud deployment
+      CLOUD_DEPLOY_ENABLED: "true"
+      CLOUD_PROVISION_SCRIPT: /app/cloud/provisioner/provision-tenant.sh
+
+    # No ports published directly — nginx is the only ingress
+    expose:
+      - "8080"
+      - "8090"
+      - "8091"
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # --------------------------------------------------------------------------
+  # Nginx — TLS termination + reverse proxy
+  # --------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - aether-internal
+      - aether-public
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/upstream.map:/etc/nginx/upstream.map:ro
+      - nginx-certs:/etc/letsencrypt:ro
+      - nginx-webroot:/var/www/certbot:ro
+    environment:
+      DOMAIN: ${DOMAIN:-aethermesh.app}
+    depends_on:
+      aether:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # --------------------------------------------------------------------------
+  # Certbot — obtains and renews Let's Encrypt certs
+  # --------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    restart: "no"
+    volumes:
+      - nginx-certs:/etc/letsencrypt
+      - nginx-webroot:/var/www/certbot
+    # Run manually first:  docker compose run --rm certbot certonly ...
+    # After initial cert, set restart: unless-stopped and use the command below
+    entrypoint: >
+      sh -c "trap exit TERM;
+             while :; do
+               certbot renew --webroot -w /var/www/certbot --quiet;
+               sleep 12h &
+               wait $${!};
+             done"
+    profiles:
+      - certbot-renew
+
+  # --------------------------------------------------------------------------
+  # Provisioner helper — used by provision-tenant.sh via docker exec or direct
+  # Run as needed; not a long-lived service
+  # --------------------------------------------------------------------------
+  provisioner:
+    image: docker:27-cli
+    restart: "no"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./provisioner:/provisioner:ro
+      - ./nginx/upstream.map:/nginx/upstream.map
+    networks:
+      - aether-internal
+    profiles:
+      - provisioner
+    entrypoint: ["sh", "-c", "echo 'Provisioner container ready'"]

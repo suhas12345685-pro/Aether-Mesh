@@ -1,0 +1,27 @@
+{
+  "cust_00985943": {
+    "id": "cust_00985943",
+    "tier": "manager",
+    "phone": {
+      "number": "+14157149366",
+      "sid": "SIMNUM-cust_00985943",
+      "simulated": true
+    },
+    "email": {
+      "address": "cust_00985943.agent@aethermesh.dev",
+      "provider": "simulated"
+    },
+    "vm": {
+      "id": "SIMVM-cust_00985943",
+      "image": "aether/tenant-runtime:latest",
+      "status": "running",
+      "simulated": true
+    },
+    "browser": {
+      "status": "lazy"
+    },
+    "provisioned": true,
+    "provisionedAt": 1782213428633,
+    "updatedAt": 1782213428633
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aether Mesh</string>
+    <string name="title_welcome">Welcome to Aether Mesh</string>
+    <string name="desc_welcome">Meet Aether, your synthetic employee. Aether runs a background heartbeat loop, monitors team channels, detects tasks, and completes them autonomously.</string>
+    <string name="title_sandbox">Sandbox Setup</string>
+    <string name="desc_sandbox">Aether runs in an isolated PRoot-based Alpine Linux environment on your device to run the Node and Python stacks safely.</string>
+    <string name="title_byob">Brain Configuration</string>
+    <string name="desc_byob">Aether is Bring Your Own Brain (BYOB). Your API keys are encrypted client-side and stored in your device\'s KeyStore.</string>
+    <string name="title_launch">Ready to Launch</string>
+    <string name="desc_launch">Select your operational tier and launch Aether Mesh on this device.</string>
+</resources>

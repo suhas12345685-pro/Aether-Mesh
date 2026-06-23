@@ -1,0 +1,44 @@
+# CI for the Aether product layer. If aether/ is a subdirectory of the repo,
+# this runs on changes under aether/. Move to the repo root .github/workflows if
+# aether/ is not the repository root.
+name: aether-ci
+
+on:
+  push:
+    paths: ["aether/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["aether/**"]
+
+defaults:
+  run:
+    working-directory: aether
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Node test suites (shared, infra, platform, supervisor)
+        run: |
+          for svc in shared infra platform supervisor; do
+            echo "== $svc =="
+            (cd "$svc" && node --test)
+          done
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Aether Core tests
+        run: |
+          cd core
+          for t in test_smoke test_reliability test_contracts test_entitlements; do
+            echo "== $t =="
+            python "tests/$t.py"
+          done

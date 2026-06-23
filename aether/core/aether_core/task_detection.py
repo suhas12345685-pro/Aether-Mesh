@@ -1,0 +1,127 @@
+"""Task detection — turn a stream of chat messages into actionable work.
+
+This is what makes Aether proactive instead of reactive: it reads channel
+history the way a diligent teammate would and decides "there is an open task
+here that nobody has picked up." It prefers the brain (Hermes) for judgement
+but always has a rule-based fallback so a dead LLM never stalls the heartbeat.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass
+
+from .bridges.hermes_bridge import HermesBridge, HermesUnavailable
+from .bridges.openclaw_bridge import Message
+
+# Cheap signals that a message is asking for work to be done.
+_ACTION_HINTS = re.compile(
+    r"\b(can someone|could someone|we need to|please|todo|to-?do|action item|"
+    r"follow up|fix|investigate|draft|write up|summari[sz]e|schedule|send|"
+    r"book|research|prepare|update the|deadline|blocked on)\b",
+    re.IGNORECASE,
+)
+_MENTION = re.compile(r"@aether\b", re.IGNORECASE)
+
+
+@dataclass
+class Task:
+    conversation_id: str
+    source_message_id: str
+    summary: str
+    confidence: float
+    raw: str
+
+    @property
+    def key(self) -> str:
+        return f"{self.conversation_id}:{self.source_message_id}"
+
+
+def _rule_based(messages: list[Message]) -> list[Task]:
+    tasks: list[Task] = []
+    for msg in messages:
+        if msg.is_bot or not msg.text.strip():
+            continue
+        mentioned = bool(_MENTION.search(msg.text))
+        hinted = bool(_ACTION_HINTS.search(msg.text))
+        if not (mentioned or hinted):
+            continue
+        tasks.append(
+            Task(
+                conversation_id=msg.conversation_id,
+                source_message_id=msg.id,
+                summary=msg.text.strip()[:200],
+                confidence=0.9 if mentioned else 0.55,
+                raw=msg.text.strip(),
+            )
+        )
+    return tasks
+
+
+def _brain_based(brain: HermesBridge, messages: list[Message]) -> list[Task] | None:
+    """Ask the brain to extract open tasks. Returns None if the brain is down."""
+    transcript = "\n".join(
+        f"[{m.id}] {m.author}: {m.text}" for m in messages if not m.is_bot and m.text
+    )
+    if not transcript:
+        return []
+    prompt = (
+        "You are a meticulous team operations assistant. Read the chat "
+        "transcript and extract OUTSTANDING tasks that no human has clearly "
+        "taken ownership of. Respond ONLY with compact JSON: a list of objects "
+        '{"source_message_id": str, "summary": str, "confidence": 0..1}. '
+        "Empty list if nothing is actionable.\n\nTRANSCRIPT:\n" + transcript
+    )
+    try:
+        raw = brain.complete(
+            [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=800
+        )
+    except HermesUnavailable:
+        return None
+
+    payload = _extract_json(raw)
+    if payload is None:
+        return None
+    by_id = {m.id: m for m in messages}
+    out: list[Task] = []
+    for item in payload:
+        mid = str(item.get("source_message_id", ""))
+        src = by_id.get(mid)
+        cid = src.conversation_id if src else (messages[0].conversation_id if messages else "")
+        out.append(
+            Task(
+                conversation_id=cid,
+                source_message_id=mid,
+                summary=str(item.get("summary", "")).strip()[:200],
+                confidence=float(item.get("confidence", 0.5)),
+                raw=str(item.get("summary", "")),
+            )
+        )
+    return out
+
+
+def _extract_json(text: str):
+    """Best-effort JSON-list extraction from a model response."""
+    text = text.strip()
+    start, end = text.find("["), text.rfind("]")
+    if start == -1 or end == -1 or end < start:
+        return None
+    try:
+        data = json.loads(text[start : end + 1])
+        return data if isinstance(data, list) else None
+    except json.JSONDecodeError:
+        return None
+
+
+def detect_tasks(
+    brain: HermesBridge,
+    messages: list[Message],
+    *,
+    min_confidence: float = 0.5,
+) -> list[Task]:
+    """Detect open tasks, preferring the brain and falling back to rules."""
+    result = _brain_based(brain, messages)
+    if result is None:  # brain unavailable
+        result = _rule_based(messages)
+    return [t for t in result if t.confidence >= min_confidence and t.summary]

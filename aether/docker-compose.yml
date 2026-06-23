@@ -1,0 +1,72 @@
+# Orchestrates the three layers built in this directory. The cloned engines
+# (../openclaw, ../hermes-agent) have their own compose files and run alongside.
+# The whole aether/ dir is mounted so each service can import ../../shared.
+services:
+  infra:
+    image: node:24-alpine
+    working_dir: /aether/infra
+    command: node src/index.mjs
+    env_file: [.env]
+    environment:
+      INFRA_PORT: "8090"
+      INFRA_DB_FILE: "/aether/data/infra.db"
+    ports: ["8090:8090"]
+    volumes:
+      - ./:/aether
+      # Enable INFRA_VM_REAL by exposing the host docker socket:
+      # - /var/run/docker.sock:/var/run/docker.sock
+
+  platform:
+    image: node:24-alpine
+    working_dir: /aether/platform
+    command: node src/server.mjs
+    env_file: [.env]
+    environment:
+      PLATFORM_PORT: "8080"
+      PLATFORM_DB_FILE: "/aether/data/platform.db"
+      INFRA_API_BASE: "http://infra:8090"
+    ports: ["8080:8080"]
+    volumes:
+      - ./:/aether
+    depends_on: [infra]
+
+  # The supervisor owns per-tenant Aether Core processes; run it instead of a
+  # single bare `core` for multi-tenant operation. It needs Python available, so
+  # this uses a node image with python installed via the command shim is avoided
+  # by mounting the host runtime — in production build a dedicated image.
+  supervisor:
+    image: node:24-alpine
+    working_dir: /aether/supervisor
+    command: sh -c "apk add --no-cache python3 && ln -sf $(which python3) /usr/local/bin/python && node src/supervisor.mjs"
+    env_file: [.env]
+    environment:
+      PLATFORM_API_BASE: "http://platform:8080"
+      INFRA_API_BASE: "http://infra:8090"
+      AETHER_CORE_CWD: "/aether/core"
+      HERMES_API_BASE: "http://host.docker.internal:8642/v1"
+      OPENCLAW_GATEWAY_URL: "http://host.docker.internal:18789"
+      SUPERVISOR_HEALTH_PORT: "8091"
+    ports: ["8091:8091"]
+    volumes:
+      - ./:/aether
+    depends_on: [platform, infra]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8091/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Single bare worker (alternative to the supervisor, for a one-tenant demo):
+  core:
+    image: python:3.13-slim
+    profiles: ["single"]
+    working_dir: /aether/core
+    command: python -m aether_core run
+    env_file: [.env]
+    environment:
+      INFRA_API_BASE: "http://infra:8090"
+      HERMES_API_BASE: "http://host.docker.internal:8642/v1"
+      OPENCLAW_GATEWAY_URL: "http://host.docker.internal:18789"
+    volumes:
+      - ./:/aether
+    depends_on: [infra]

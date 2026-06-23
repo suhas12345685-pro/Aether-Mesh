@@ -1,0 +1,27 @@
+{
+  "t1": {
+    "id": "t1",
+    "tier": "manager",
+    "phone": {
+      "number": "+14155745217",
+      "sid": "SIMNUM-t1",
+      "simulated": true
+    },
+    "email": {
+      "address": "t1.agent@aethermesh.dev",
+      "provider": "simulated"
+    },
+    "vm": {
+      "id": "SIMVM-t1",
+      "image": "aether/tenant-runtime:latest",
+      "status": "running",
+      "simulated": true
+    },
+    "browser": {
+      "status": "lazy"
+    },
+    "provisioned": true,
+    "provisionedAt": 1782213425153,
+    "updatedAt": 1782213425153
+  }
+}

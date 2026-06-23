@@ -1,0 +1,9 @@
+{
+  "name": "@aether/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared zero-dependency libraries for the Aether services (db, crypto, http, validate, retry, log, metrics, observe).",
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=22" }
+}

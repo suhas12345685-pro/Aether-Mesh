@@ -1,0 +1,11 @@
+{
+  "name": "@aether/supervisor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aether Mesh worker supervisor — spawns and monitors one Aether Core process per active tenant, pulling each tenant's decrypted launch env from the platform and restarting on crash with backoff.",
+  "bin": { "aether-supervisor": "src/supervisor.mjs" },
+  "scripts": { "start": "node src/supervisor.mjs", "test": "node --test" },
+  "engines": { "node": ">=18" },
+  "dependencies": {}
+}

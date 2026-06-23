@@ -1,0 +1,18 @@
+NOTE: This directory requires real PNG icon files for Tauri to build correctly.
+
+Required icons (generate with `tauri icon <source.png>`):
+  - icon.png        (source, at least 1024×1024)
+  - 32x32.png
+  - 128x128.png
+  - 128x128@2x.png  (256×256)
+  - icon.icns       (macOS)
+  - icon.ico        (Windows)
+
+To generate all variants from a source image, run:
+  npx tauri icon path/to/source-icon.png
+
+The Aether Mesh icon should represent an indigo glowing mesh/network orb.
+Suggested: dark background (#0a0d14) with glowing indigo (#6366f1) hexagonal mesh pattern.
+
+Until real icons are in place, you can use Tauri's default icons by running:
+  tauri icon  (with no arguments — uses a placeholder)

@@ -1,0 +1,20 @@
+{
+  "name": "@aether/infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aether Mesh Infrastructure layer — provisions the leased 'body' for each tenant: phone (Twilio), email identity (SMTP/IMAP), sandboxed browser (Playwright), and an isolated VM (Docker).",
+  "bin": { "aether-infra": "src/index.mjs" },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" },
+  "//": "Heavy SDKs are loaded dynamically only when the matching INFRA_*_REAL flag is set, so the service runs with zero installed deps in simulated mode. Run `npm install` to enable live integrations.",
+  "dependencies": {
+    "twilio": "^5.3.0",
+    "nodemailer": "^6.9.0",
+    "playwright": "^1.47.0",
+    "dockerode": "^4.0.0"
+  }
+}

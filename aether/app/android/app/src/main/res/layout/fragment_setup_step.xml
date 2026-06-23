@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  fragment_setup_step.xml — Generic step layout used by all 4 wizard fragments.
+  Each fragment fills in: title, subtitle, description, and optionally shows
+  the progress bar (install step) or config fields (config step).
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:gravity="top">
+
+        <!-- Orb illustration placeholder -->
+        <FrameLayout
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="32dp"
+            android:background="@drawable/bg_orb" />
+
+        <!-- Step title -->
+        <TextView
+            android:id="@+id/step_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Step Title"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Step subtitle -->
+        <TextView
+            android:id="@+id/step_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Subtitle"
+            android:textColor="@color/accent_indigo"
+            android:textSize="15sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Step description -->
+        <TextView
+            android:id="@+id/step_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:lineSpacingMultiplier="1.5"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Progress bar (shown only for install step) -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/step_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="0"
+            android:visibility="gone"
+            app:trackColor="@color/bg_surface"
+            app:indicatorColor="@color/accent_indigo"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Provider spinner (config step) -->
+        <Spinner
+            android:id="@+id/provider_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_input"
+            android:layout_marginBottom="12dp"
+            android:visibility="visible" />
+
+        <!-- Model name input (config step) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/model_layout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Model (e.g. gpt-4o, claude-3-5-sonnet)"
+            android:layout_marginBottom="12dp"
+            app:boxStrokeColor="@color/accent_indigo">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/model_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textColor="@color/text_primary" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- API key input (config step, masked) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/api_key_layout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="API Key"
+            app:endIconMode="password_toggle"
+            app:boxStrokeColor="@color/accent_indigo">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/api_key_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+</ScrollView>

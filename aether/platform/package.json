@@ -1,0 +1,17 @@
+{
+  "name": "@aether/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aether Mesh B2B platform — subscription tiers, customer dashboard, BYOB config, and onboarding. Provisions tenants via the Infrastructure layer and registers Aether Core workers.",
+  "bin": { "aether-platform": "src/server.mjs" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" },
+  "//": "Stripe is loaded dynamically only when PLATFORM_BILLING_REAL=true; the platform runs with zero installed deps otherwise.",
+  "dependencies": {
+    "stripe": "^16.0.0"
+  }
+}

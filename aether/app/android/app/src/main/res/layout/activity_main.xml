@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  activity_main.xml
+  Root layout: WebView (Dashboard tab) + LogRecyclerView (Logs tab) +
+               Settings panel + status chip + BottomNavigationView
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    tools:context=".MainActivity">
+
+    <!-- Status chip (sandbox running indicator) -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/sandbox_status_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="12dp"
+        android:text="○ Stopped"
+        android:textSize="11sp"
+        app:chipMinHeight="28dp"
+        app:chipBackgroundColor="@color/accent_orange"
+        style="@style/Widget.Material3.Chip.Assist" />
+
+    <!-- Main content area -->
+    <FrameLayout
+        android:id="@+id/content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="?attr/actionBarSize"
+        android:paddingTop="4dp">
+
+        <!-- Dashboard tab: WebView -->
+        <WebView
+            android:id="@+id/web_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="visible" />
+
+        <!-- Logs tab: RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/log_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/bg_primary"
+            android:clipToPadding="false"
+            android:padding="8dp"
+            android:visibility="gone"
+            tools:listitem="@layout/item_log" />
+
+        <!-- Settings tab panel -->
+        <LinearLayout
+            android:id="@+id/settings_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/bg_primary"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="top"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sandbox Controls"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_restart_sandbox"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Start Sandbox"
+                android:layout_marginBottom="12dp"
+                app:backgroundTint="@color/accent_indigo" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_stop_sandbox"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Stop Sandbox"
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:strokeColor="@color/accent_orange" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_reconfigure"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Reconfigure AI Provider"
+                android:layout_marginTop="16dp"
+                style="@style/Widget.Material3.Button.TextButton" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- Bottom navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/bg_surface"
+        app:itemIconTint="@color/bottom_nav_tint"
+        app:itemTextColor="@color/bottom_nav_tint"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
