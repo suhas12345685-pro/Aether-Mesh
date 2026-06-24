@@ -76,7 +76,7 @@ COPY --from=python-deps /build/core     ./core
 
 # ---- Entrypoint script -----------------------------------------------------
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # ---- Ownership -------------------------------------------------------------
 RUN chown -R aether:aether /app /app/logs
