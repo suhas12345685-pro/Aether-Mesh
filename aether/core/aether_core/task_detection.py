@@ -1,4 +1,4 @@
-"""Task detection — turn a stream of chat messages into actionable work.
+"""Task detection -- turn a stream of chat messages into actionable work.
 
 This is what makes Aether proactive instead of reactive: it reads channel
 history the way a diligent teammate would and decides "there is an open task
@@ -9,17 +9,23 @@ but always has a rule-based fallback so a dead LLM never stalls the heartbeat.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass
 
 from .bridges.hermes_bridge import HermesBridge, HermesUnavailable
 from .bridges.openclaw_bridge import Message
 
+log = logging.getLogger("aether.task_detection")
+
 # Cheap signals that a message is asking for work to be done.
+# NOTE: hints-only detection requires a specific action word -- vague words
+# like "please" / "send" alone are not enough to avoid false-positives on
+# casual conversation ("could someone please pass the salt").
+# Pure @aether mentions always trigger regardless of hint words.
 _ACTION_HINTS = re.compile(
-    r"\b(can someone|could someone|we need to|please|todo|to-?do|action item|"
-    r"follow up|fix|investigate|draft|write up|summari[sz]e|schedule|send|"
-    r"book|research|prepare|update the|deadline|blocked on)\b",
+    r"\b(todo|to-?do|action item|follow.?up|fix|investigate|draft|write.?up|"
+    r"summari[sz]e|schedule|research|prepare|deadline|blocked on)\b",
     re.IGNORECASE,
 )
 _MENTION = re.compile(r"@aether\b", re.IGNORECASE)
@@ -45,6 +51,7 @@ def _rule_based(messages: list[Message]) -> list[Task]:
             continue
         mentioned = bool(_MENTION.search(msg.text))
         hinted = bool(_ACTION_HINTS.search(msg.text))
+        # Require an explicit @aether mention OR a strong action-word hit.
         if not (mentioned or hinted):
             continue
         tasks.append(
@@ -52,11 +59,32 @@ def _rule_based(messages: list[Message]) -> list[Task]:
                 conversation_id=msg.conversation_id,
                 source_message_id=msg.id,
                 summary=msg.text.strip()[:200],
-                confidence=0.9 if mentioned else 0.55,
+                confidence=0.9 if mentioned else 0.65,
                 raw=msg.text.strip(),
             )
         )
     return tasks
+
+
+def _validate_task_item(item: object) -> bool:
+    """Return True only if *item* is a well-formed task dict from the LLM.
+
+    Rejects anything that would cause a downstream crash or produce a
+    nonsensical task (missing id, empty summary, out-of-range confidence).
+    """
+    if not isinstance(item, dict):
+        return False
+    mid = item.get("source_message_id")
+    if not mid or not isinstance(mid, (str, int)):
+        return False
+    summary = item.get("summary", "")
+    if not isinstance(summary, str) or not summary.strip():
+        return False
+    try:
+        conf = float(item.get("confidence", -1))
+    except (TypeError, ValueError):
+        return False
+    return 0.0 <= conf <= 1.0
 
 
 def _brain_based(brain: HermesBridge, messages: list[Message]) -> list[Task] | None:
@@ -82,20 +110,27 @@ def _brain_based(brain: HermesBridge, messages: list[Message]) -> list[Task] | N
 
     payload = _extract_json(raw)
     if payload is None:
+        log.warning("task_detection: LLM returned unparseable response; falling back to rules")
         return None
+
     by_id = {m.id: m for m in messages}
     out: list[Task] = []
     for item in payload:
-        mid = str(item.get("source_message_id", ""))
+        if not _validate_task_item(item):
+            log.warning("task_detection: dropping malformed LLM item: %r", item)
+            continue
+        mid = str(item["source_message_id"])
         src = by_id.get(mid)
         cid = src.conversation_id if src else (messages[0].conversation_id if messages else "")
+        # Clamp confidence strictly to [0, 1] regardless of what the LLM said.
+        conf = max(0.0, min(1.0, float(item["confidence"])))
         out.append(
             Task(
                 conversation_id=cid,
                 source_message_id=mid,
-                summary=str(item.get("summary", "")).strip()[:200],
-                confidence=float(item.get("confidence", 0.5)),
-                raw=str(item.get("summary", "")),
+                summary=item["summary"].strip()[:200],
+                confidence=conf,
+                raw=item["summary"],
             )
         )
     return out
@@ -122,6 +157,6 @@ def detect_tasks(
 ) -> list[Task]:
     """Detect open tasks, preferring the brain and falling back to rules."""
     result = _brain_based(brain, messages)
-    if result is None:  # brain unavailable
+    if result is None:  # brain unavailable or returned garbage
         result = _rule_based(messages)
     return [t for t in result if t.confidence >= min_confidence and t.summary]

@@ -1,0 +1,22 @@
+# Litestream configuration for Aether Mesh.
+# Backs up the SQLite databases continuously to an S3-compatible object storage (e.g., Cloudflare R2, AWS S3).
+# References: https://litestream.io/reference/config/
+
+dbs:
+  - path: /app/data/platform/platform.db
+    replicas:
+      - url: s3://${LITESTREAM_S3_BUCKET}/platform
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        sync-interval: 1s
+        retention: 24h
+
+  - path: /app/data/infra/infra.db
+    replicas:
+      - url: s3://${LITESTREAM_S3_BUCKET}/infra
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        sync-interval: 1s
+        retention: 24h

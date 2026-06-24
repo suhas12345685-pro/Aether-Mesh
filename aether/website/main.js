@@ -209,13 +209,13 @@
 
   const PRICES = {
     local: {
-      intern:     { num: '$19',    period: '/month' },
-      manager:    { num: '$49',    period: '/month' },
+      starter:    { num: '$19',    period: '/month' },
+      growth:     { num: '$49',    period: '/month' },
       enterprise: { num: 'Custom', period: 'contact us' },
     },
     cloud: {
-      intern:     { num: '$34',    period: '/month' },
-      manager:    { num: '$78',    period: '/month' },
+      starter:    { num: '$34',    period: '/month' },
+      growth:     { num: '$78',    period: '/month' },
       enterprise: { num: 'Custom', period: 'cloud SLA' },
     }
   };
@@ -236,7 +236,7 @@
   function updateDisplay() {
     const mode = selectedDeploy;
     const isCloud = mode === 'cloud';
-    const tiers = ['intern', 'manager', 'enterprise'];
+    const tiers = ['starter', 'growth', 'enterprise'];
 
     // Update pricing numbers
     tiers.forEach(tier => {
@@ -260,10 +260,10 @@
         if (ctaBtn && tier !== 'enterprise') {
           if (isCloud) {
             ctaBtn.textContent = 'Deploy to Cloud →';
-            ctaBtn.setAttribute('href', 'dashboard.html?deploy=cloud');
+            ctaBtn.setAttribute('href', 'https://aether-mesh-production.up.railway.app/dashboard?deploy=cloud');
           } else {
             ctaBtn.textContent = 'Download App →';
-            ctaBtn.setAttribute('href', 'dashboard.html?deploy=local');
+            ctaBtn.setAttribute('href', 'https://aether-mesh-production.up.railway.app/dashboard?deploy=local');
           }
         }
       }

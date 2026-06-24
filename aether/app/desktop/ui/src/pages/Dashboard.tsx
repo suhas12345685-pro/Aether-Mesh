@@ -8,8 +8,6 @@ import {
   Play,
   Square,
   Globe,
-  ScrollText,
-  Brain,
   MessageSquare,
   CheckSquare,
   Send,
@@ -83,10 +81,11 @@ export default function Dashboard({ config }: DashboardProps) {
   };
 
   const fetchActivity = async () => {
+    const base = config.platform_url || "http://localhost:8080";
     try {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch(`http://localhost:8080/api/customers/${config.tenant_id}/activity`, {
+      const res = await fetch(`${base}/api/customers/${config.tenant_id}/activity`, {
         signal: controller.signal,
       });
       clearTimeout(id);

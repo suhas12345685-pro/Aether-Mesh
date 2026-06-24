@@ -2,6 +2,7 @@
 // a secret key is present; otherwise a simulated subscription so onboarding
 // completes end to end without a Stripe account.
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { fetchJson } from "../../shared/retry.mjs";
 
 const REAL = process.env.PLATFORM_BILLING_REAL === "true";
 
@@ -139,16 +140,19 @@ export async function createRazorpayOrder(customer, tier, addCloudDeploy = false
   const secret = process.env.RAZORPAY_KEY_SECRET;
 
   let amountUsd = 19;
-  const tId = typeof tier === "string" ? tier : (tier.id || "intern");
-  if (tId === "intern") amountUsd = 19;
-  if (tId === "manager") amountUsd = 49;
+  const tId = typeof tier === "string" ? tier : (tier.id || "starter");
+  if (tId === "starter") amountUsd = 19;
+  if (tId === "growth") amountUsd = 49;
 
   if (addCloudDeploy) {
-    amountUsd += (tId === "intern" ? 15 : 29);
+    amountUsd += (tId === "starter" ? 15 : 29);
   }
 
-  // Convert to INR paise (cents) using 1 USD = 83 INR rate
-  const amountInrPaise = Math.round(amountUsd * 83 * 100);
+  // Convert to INR paise. Override with RAZORPAY_USD_TO_INR env var if set;
+  // otherwise default to 84. NOTE: update this periodically or integrate a
+  // live FX API before going to production.
+  const usdToInr = Number(process.env.RAZORPAY_USD_TO_INR || 84);
+  const amountInrPaise = Math.round(amountUsd * usdToInr * 100);
 
   if (!keyId || !secret) {
     // Simulated order
@@ -163,35 +167,28 @@ export async function createRazorpayOrder(customer, tier, addCloudDeploy = false
 
   // Real HTTP basic auth to Razorpay Orders API
   const auth = Buffer.from(`${keyId}:${secret}`).toString("base64");
-  const response = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Basic ${auth}`,
+  const order = await fetchJson(
+    "https://api.razorpay.com/v1/orders",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${auth}`,
+      },
+      body: JSON.stringify({
+        amount: amountInrPaise,
+        currency: "INR",
+        receipt: `rcpt_${customer.id}_${Date.now()}`,
+        notes: {
+          customerId: customer.id,
+          tier: tId,
+          cloudDeploy: String(addCloudDeploy),
+        }
+      })
     },
-    body: JSON.stringify({
-      amount: amountInrPaise,
-      currency: "INR",
-      receipt: `rcpt_${customer.id}_${Date.now()}`,
-      notes: {
-        customerId: customer.id,
-        tier: tId,
-        cloudDeploy: String(addCloudDeploy),
-      }
-    })
-  });
+    { retries: 2, backoff: 300 }
+  );
 
-  if (!response.ok) {
-    const errText = await response.text();
-    let errMsg = `HTTP error ${response.status}`;
-    try {
-      const errJson = JSON.parse(errText);
-      if (errJson.error?.description) errMsg = errJson.error.description;
-    } catch {}
-    throw new Error(`Razorpay API error: ${errMsg}`);
-  }
-
-  const order = await response.json();
   return {
     orderId: order.id,
     amount: order.amount,
@@ -208,7 +205,11 @@ export function verifyRazorpaySignature(paymentId, orderId, signature) {
 
   const text = `${orderId}|${paymentId}`;
   const expected = createHmac("sha256", secret).update(text).digest("hex");
-  return expected === signature;
+  // Use timing-safe comparison to prevent timing-based signature oracle attacks.
+  const a = Buffer.from(expected);
+  const b = Buffer.from(String(signature));
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 

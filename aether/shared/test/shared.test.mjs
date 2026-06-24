@@ -7,9 +7,9 @@ import { readJson } from "../http.mjs";
 
 import {
   decryptSecret, encryptSecret, hashPassword, randomToken, safeEqual,
-  signSession, verifyPassword, verifySession,
+  signSession, verifyPassword, verifySession, reEncryptSecret, previousMasterKey,
 } from "../crypto.mjs";
-import { fromJson, migrate, openDb, toJson } from "../db.mjs";
+import { fromJson, migrate, connectDb, toJson, rollback } from "../db.mjs";
 import { RateLimiter } from "../http.mjs";
 import { Counter, Histogram, metricsText } from "../metrics.mjs";
 import { fetchJson, retry } from "../retry.mjs";
@@ -22,10 +22,10 @@ test("crypto: AES-GCM round-trip + tamper detection", () => {
   assert.throws(() => decryptSecret(blob.slice(0, -4) + "0000"));
 });
 
-test("crypto: passwords + sessions", () => {
-  const h = hashPassword("pw12345");
-  assert.ok(verifyPassword("pw12345", h));
-  assert.ok(!verifyPassword("nope", h));
+test("crypto: passwords + sessions", async () => {
+  const h = await hashPassword("pw12345");
+  assert.ok(await verifyPassword("pw12345", h));
+  assert.ok(!(await verifyPassword("nope", h)));
   const tok = signSession({ sub: "c1", role: "admin" }, "s");
   assert.equal(verifySession(tok, "s").sub, "c1");
   assert.equal(verifySession(tok, "other"), null);
@@ -34,13 +34,63 @@ test("crypto: passwords + sessions", () => {
   assert.equal(randomToken(8).length > 0, true);
 });
 
-test("db: migrations are idempotent", () => {
-  const db = openDb(":memory:");
-  migrate(db, [{ id: "1", sql: "CREATE TABLE t(x TEXT)" }]);
-  migrate(db, [{ id: "1", sql: "THIS WOULD FAIL IF RE-RUN" }]); // skipped
-  db.prepare("INSERT INTO t VALUES(?)").run(toJson({ a: 1 }));
-  assert.deepEqual(fromJson(db.prepare("SELECT x FROM t").get().x), { a: 1 });
-  db.close();
+test("crypto: secrets rotation support", () => {
+  process.env.AETHER_SECRET_KEY = "a".repeat(64);
+  const v1Blob = encryptSecret("rotated-secret");
+  assert.ok(v1Blob.startsWith("v1:"));
+
+  // Rotate key: current becomes previous, new key is set
+  process.env.AETHER_SECRET_KEY_PREV = process.env.AETHER_SECRET_KEY;
+  process.env.AETHER_SECRET_KEY = "b".repeat(64);
+
+  // Clear cached keys to force re-derivation
+  // Since cached keys are global, we can decrypt v1Blob using the previous key
+  const decrypted = decryptSecret(v1Blob);
+  assert.equal(decrypted, "rotated-secret", "decrypted using previous key");
+
+  // Re-encrypt under the new key
+  const v2Blob = reEncryptSecret(v1Blob);
+  assert.ok(v2Blob.startsWith("v1:"));
+  assert.equal(decryptSecret(v2Blob), "rotated-secret", "decrypted using new key");
+
+  // Clean up env vars
+  delete process.env.AETHER_SECRET_KEY_PREV;
+  process.env.AETHER_SECRET_KEY = "a".repeat(64);
+});
+
+test("db: migrations are idempotent", async () => {
+  const db = await connectDb(":memory:");
+  await migrate(db, [{ id: "1", sql: "CREATE TABLE t(x TEXT)" }]);
+  await migrate(db, [{ id: "1", sql: "THIS WOULD FAIL IF RE-RUN" }]); // skipped
+  await db.run("INSERT INTO t VALUES(?)", [toJson({ a: 1 })]);
+  const row = await db.get("SELECT x FROM t");
+  assert.deepEqual(fromJson(row.x), { a: 1 });
+  await db.close();
+});
+
+test("db: down-migrations rollback", async () => {
+  const db = await connectDb(":memory:");
+  const migrations = [
+    { id: "1", sql: "CREATE TABLE t1(x TEXT);", down: "DROP TABLE t1;" },
+    { id: "2", sql: "CREATE TABLE t2(x TEXT);", down: "DROP TABLE t2;" },
+    { id: "3", sql: "CREATE TABLE t3(x TEXT);", down: "DROP TABLE t3;" },
+  ];
+  await migrate(db, migrations);
+
+  // Verify they exist
+  await db.run("INSERT INTO t1 VALUES('a')");
+  await db.run("INSERT INTO t2 VALUES('b')");
+  await db.run("INSERT INTO t3 VALUES('c')");
+
+  // Rollback to migration "1" (should rollback 3 and 2)
+  await rollback(db, migrations, "1");
+
+  // Verify t1 still exists, t2 and t3 are dropped
+  await db.run("INSERT INTO t1 VALUES('ok')");
+  await assert.rejects(db.run("INSERT INTO t2 VALUES('fail')"));
+  await assert.rejects(db.run("INSERT INTO t3 VALUES('fail')"));
+
+  await db.close();
 });
 
 test("validate: required/email/enum", () => {
@@ -50,9 +100,22 @@ test("validate: required/email/enum", () => {
   assert.equal(str({ x: "ok" }, "x"), "ok");
 });
 
-test("http: rate limiter", () => {
-  const rl = new RateLimiter({ capacity: 2, refillPerSec: 0 });
-  assert.deepEqual([rl.check("k"), rl.check("k"), rl.check("k")], [true, true, false]);
+test("http: rate limiter + LRU eviction", async () => {
+  const rl = new RateLimiter({ capacity: 2, refillPerSec: 0, maxSize: 5 });
+  assert.deepEqual([await rl.check("ip1"), await rl.check("ip1"), await rl.check("ip1")], [true, true, false]);
+  
+  await rl.check("ip2");
+  await rl.check("ip3");
+  await rl.check("ip4");
+  await rl.check("ip5");
+  assert.equal(rl.buckets.size, 5);
+  
+  // Trigger eviction of 1 entry (oldest "ip1")
+  await rl.check("ip6");
+  
+  assert.equal(rl.buckets.size, 5);
+  assert.equal(rl.buckets.has("ip1"), false, "ip1 evicted");
+  assert.equal(rl.buckets.has("ip6"), true);
 });
 
 test("retry: succeeds after transient failures", async () => {

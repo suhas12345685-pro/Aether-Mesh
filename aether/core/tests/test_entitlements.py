@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import sys
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -78,42 +78,43 @@ def _env_for(srv, ws, **extra):
     })
 
 
-def _fresh_heartbeat(ws):
+def _fresh_heartbeat(ws: Path):
+    """Create a Heartbeat against a guaranteed-empty temp workspace."""
     from aether_core.config import load_config
     from aether_core.heartbeat import Heartbeat
-    shutil.rmtree(ws, ignore_errors=True)
+    # Workspace is a fresh tempfile.mkdtemp(), so no stale ledger can exist.
     return Heartbeat(load_config())
 
 
 def test_daily_deliverable_quota():
     srv = _serve()
-    ws = Path(__file__).resolve().parent / "_ent_ws_quota"
-    try:
-        SENT.clear()
-        _env_for(srv, ws, AETHER_MAX_DELIVERABLES_PER_DAY="1")
-        hb = _fresh_heartbeat(ws)
-        summary = hb.beat()
-        # two conversations -> two tasks, but the quota caps deliveries at 1
-        assert summary["tasks"] == 2, summary
-        assert summary["delivered"] == 1, summary
-        assert summary["skipped_quota"] == 1, summary
-    finally:
-        srv.shutdown()
-        shutil.rmtree(ws, ignore_errors=True)
+    with tempfile.TemporaryDirectory() as ws_str:
+        ws = Path(ws_str)
+        try:
+            SENT.clear()
+            _env_for(srv, ws, AETHER_MAX_DELIVERABLES_PER_DAY="1")
+            hb = _fresh_heartbeat(ws)
+            summary = hb.beat()
+            # two conversations -> two tasks, but the quota caps deliveries at 1
+            assert summary["tasks"] == 2, summary
+            assert summary["delivered"] == 1, summary
+            assert summary["skipped_quota"] == 1, summary
+        finally:
+            srv.shutdown()
 
 
 def test_max_channels_cap():
     srv = _serve()
-    ws = Path(__file__).resolve().parent / "_ent_ws_chan"
-    try:
-        SENT.clear()
-        _env_for(srv, ws, AETHER_MAX_CHANNELS="1")
-        hb = _fresh_heartbeat(ws)
-        summary = hb.beat()
-        assert summary["conversations"] == 1, summary  # capped from 2 to 1
-    finally:
-        srv.shutdown()
-        shutil.rmtree(ws, ignore_errors=True)
+    with tempfile.TemporaryDirectory() as ws_str:
+        ws = Path(ws_str)
+        try:
+            SENT.clear()
+            _env_for(srv, ws, AETHER_MAX_CHANNELS="1")
+            hb = _fresh_heartbeat(ws)
+            summary = hb.beat()
+            assert summary["conversations"] == 1, summary  # capped from 2 to 1
+        finally:
+            srv.shutdown()
 
 
 if __name__ == "__main__":

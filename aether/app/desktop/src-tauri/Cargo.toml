@@ -21,6 +21,9 @@ keyring = "2"
 futures = "0.3"
 tokio-stream = "0.1"
 anyhow = "1"
+dirs-next = "2"
+open = "5"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 [profile.release]
 panic = "abort"

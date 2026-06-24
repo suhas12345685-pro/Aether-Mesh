@@ -23,7 +23,7 @@ function generatePersona(org, tenantId) {
   let h = 0;
   for (const c of tenantId) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const first = FIRST[h % FIRST.length];
-  const last  = LAST[(h >> 4) % LAST.length];
+  const last  = LAST[(h >>> 4) % LAST.length];
   const slug  = `${first.toLowerCase()}.${last.toLowerCase()}`;
   return {
     name: `${first} ${last}`,
@@ -115,16 +115,16 @@ export function renderWorkerConfig(customer, tier) {
 
 export async function onboard(store, { org, email, password, tier: tierId, byob }) {
   const tier = getTier(tierId);
-  let customer = store.create({ org, email, passwordHash: hashPassword(password), tier: tier.id });
+  let customer = await store.create({ org, email, passwordHash: await hashPassword(password), tier: tier.id });
 
   // Encrypt the BYOB API key before persisting.
   if (byob) {
     const { apiKey, ...rest } = byob;
-    customer = store.update(customer.id, { byob: { ...rest, apiKeyEnc: encryptSecret(apiKey) } });
+    customer = await store.update(customer.id, { byob: { ...rest, apiKeyEnc: encryptSecret(apiKey) } });
   }
 
   const subscription = await createSubscription(customer, tier);
-  customer = store.update(customer.id, { subscription });
+  customer = await store.update(customer.id, { subscription });
 
   const persona = generatePersona(org, customer.id);
 
@@ -132,7 +132,7 @@ export async function onboard(store, { org, email, password, tier: tierId, byob 
   try {
     const result = await provisionBody(customer.id, tier, persona);
     const { token, ...identity } = result;
-    customer = store.update(customer.id, {
+    customer = await store.update(customer.id, {
       infra: identity,
       tenantTokenEnc: encryptSecret(token),
     });
@@ -143,7 +143,7 @@ export async function onboard(store, { org, email, password, tier: tierId, byob 
   }
 
   const workerSpec = renderWorkerSpec(customer, tier);
-  customer = store.update(customer.id, {
+  customer = await store.update(customer.id, {
     workerSpec,
     status: steps.provisioned ? "active" : "provision_failed",
   });

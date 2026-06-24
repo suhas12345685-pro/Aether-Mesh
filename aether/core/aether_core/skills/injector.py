@@ -89,14 +89,23 @@ class SkillInjector:
         try:
             with tarfile.open(tarball_path, "r:gz") as tar:
                 # Security: strip leading path components and reject absolute
-                # paths / path traversal attempts.
+                # paths / path traversal attempts before extraction.
+                safe_members = []
                 for member in tar.getmembers():
                     safe_name = self._safe_member_path(member.name)
                     if safe_name is None:
                         log.warning("injector: skipping unsafe tarball member %r", member.name)
                         continue
                     member.name = safe_name
-                tar.extractall(skill_dir)  # noqa: S202 — members sanitised above
+                    safe_members.append(member)
+                # filter='data' (Python 3.12+) suppresses device files, setuid
+                # bits, and absolute symlinks at the tarfile level as a second
+                # defence layer on top of the manual sanitisation above.
+                try:
+                    tar.extractall(skill_dir, members=safe_members, filter="data")
+                except TypeError:
+                    # Python < 3.12 does not support the filter keyword.
+                    tar.extractall(skill_dir, members=safe_members)  # noqa: S202
         except tarfile.TarError as exc:
             shutil.rmtree(skill_dir, ignore_errors=True)
             raise SkillInstallError(skill_name, f"tarball extraction failed: {exc}") from exc

@@ -57,16 +57,6 @@
     }
   },
   "plugins": {
-    "updater": {
-      "pubkey": "PLACEHOLDER_PUBKEY",
-      "endpoints": [
-        "https://releases.aethermesh.app/{{target}}/{{arch}}/latest.json"
-      ],
-      "dialog": true,
-      "windows": {
-        "installMode": "passive"
-      }
-    },
     "notification": {
       "permission": "default"
     },

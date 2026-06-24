@@ -35,7 +35,7 @@ test("infra: auth, provisioning, per-tenant tokens, validation", async () => {
     // provision requires the admin token
     assert.equal((await call(port, "POST", "/provision", { tenantId: "t1" })).status, 401);
 
-    const prov = await call(port, "POST", "/provision", { tenantId: "t1", tier: "manager" }, ADMIN);
+    const prov = await call(port, "POST", "/provision", { tenantId: "t1", tier: "growth" }, ADMIN);
     assert.equal(prov.status, 201);
     assert.ok(prov.json.token, "provision returns a one-time tenant token");
     assert.ok(prov.json.phone.number.startsWith("+1"));
@@ -73,7 +73,7 @@ test("infra: persona + email inbound inbox", async () => {
     // Provision a tenant with an explicit persona.
     const persona = { name: "Alex Chen", email: "alex.chen@agent.aethermesh.dev" };
     const prov = await call(port, "POST", "/provision",
-      { tenantId: "p1", tier: "manager", persona }, ADMIN);
+      { tenantId: "p1", tier: "growth", persona }, ADMIN);
     assert.equal(prov.status, 201);
     assert.equal(prov.json.persona?.name, "Alex Chen", "persona stored");
     assert.equal(prov.json.email?.displayName, "Alex Chen", "persona reflected in mailbox");
@@ -128,7 +128,7 @@ test("infra: SMS inbound inbox", async () => {
   try {
     // Provision a tenant — phone number comes back in prov.json.phone.number
     const prov = await call(port, "POST", "/provision",
-      { tenantId: "sms1", tier: "intern" }, ADMIN);
+      { tenantId: "sms1", tier: "starter" }, ADMIN);
     assert.equal(prov.status, 201);
     const phoneNumber = prov.json.phone?.number;
     assert.ok(phoneNumber, "tenant has a phone number");
@@ -183,7 +183,7 @@ test("infra: tier capability gating", async () => {
   try {
     // intern-like tier: phone+email only, no browser/vm
     const prov = await call(port, "POST", "/provision",
-      { tenantId: "cap1", tier: "intern", capabilities: { phone: true, email: true, browser: false, vm: false } },
+      { tenantId: "cap1", tier: "starter", capabilities: { phone: true, email: true, browser: false, vm: false } },
       ADMIN);
     const tok = prov.json.token;
     assert.equal((await call(port, "POST", "/tenants/cap1/sms", { to: "+1555", text: "hi" }, tok)).status, 200);

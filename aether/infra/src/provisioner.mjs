@@ -17,27 +17,27 @@ export class Provisioner {
   }
 
   async provision(tenantId, {
-    tier = "intern",
+    tier = "starter",
     capabilities = null,
     persona = null,
     preferredPhoneNumber = null,
   } = {}) {
-    const existing = this.store.get(tenantId);
+    const existing = await this.store.get(tenantId);
     const token = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(token).digest("hex");
 
     if (existing?.provisioned) {
       // Idempotent re-provision: rotate token + refresh entitlements.
       const patch = { ...(capabilities ? { capabilities } : {}), ...(persona ? { persona } : {}) };
-      let t = this.store.upsert(tenantId, patch, { tokenHash });
-      if (persona?.email) this.store.setEmailAddress(tenantId, persona.email);
+      let t = await this.store.upsert(tenantId, patch, { tokenHash });
+      if (persona?.email) await this.store.setEmailAddress(tenantId, persona.email);
 
       // If caller requested a specific phone number, re-provision it now.
       if (preferredPhoneNumber) {
         const newPhone = await provisionNumber(tenantId, { preferredNumber: preferredPhoneNumber });
-        t = this.store.upsert(tenantId, { phone: newPhone });
-        if (newPhone?.number) this.store.setPhoneNumber(tenantId, newPhone.number);
-        this.store.audit("phone_changed", tenantId, { number: newPhone.number });
+        t = await this.store.upsert(tenantId, { phone: newPhone });
+        if (newPhone?.number) await this.store.setPhoneNumber(tenantId, newPhone.number);
+        await this.store.audit("phone_changed", tenantId, { number: newPhone.number });
       }
 
       return { ...t, token };
@@ -49,7 +49,7 @@ export class Provisioner {
       provisionVm(tenantId),
     ]);
 
-    const t = this.store.upsert(
+    const t = await this.store.upsert(
       tenantId,
       {
         tier,
@@ -66,24 +66,24 @@ export class Provisioner {
     );
 
     // Index the email address for inbound routing.
-    if (email?.address) this.store.setEmailAddress(tenantId, email.address);
+    if (email?.address) await this.store.setEmailAddress(tenantId, email.address);
     // Index the phone number for inbound SMS routing.
-    if (phone?.number) this.store.setPhoneNumber(tenantId, phone.number);
+    if (phone?.number) await this.store.setPhoneNumber(tenantId, phone.number);
 
-    this.store.audit("provisioned", tenantId, { tier, simulated: !!phone.simulated });
+    await this.store.audit("provisioned", tenantId, { tier, simulated: !!phone.simulated });
     return { ...t, token };
   }
 
-  get(tenantId) {
-    return this.store.get(tenantId);
+  async get(tenantId) {
+    return await this.store.get(tenantId);
   }
 
-  verifyToken(tenantId, token) {
-    return this.store.verifyToken(tenantId, token);
+  async verifyToken(tenantId, token) {
+    return await this.store.verifyToken(tenantId, token);
   }
 
-  require(tenantId) {
-    const t = this.store.get(tenantId);
+  async require(tenantId) {
+    const t = await this.store.get(tenantId);
     if (!t || !t.provisioned) {
       const err = new Error(`tenant '${tenantId}' is not provisioned`);
       err.statusCode = 404;

@@ -1436,6 +1436,170 @@ footer {
 }
 
 /* ============================================================
+   PLATFORM BADGES
+   ============================================================ */
+.platform-logo-available {
+  cursor: pointer;
+  border-color: var(--border2);
+}
+
+.platform-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--emerald);
+  background: var(--emerald-dim);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.platform-badge-soon {
+  color: var(--muted);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+
+/* ============================================================
+   DOWNLOAD SECTION
+   ============================================================ */
+#download {
+  padding: 100px 0 80px;
+}
+
+.dl-inner {
+  text-align: center;
+}
+
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+  text-align: left;
+}
+
+.dl-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+  position: relative;
+}
+
+.dl-featured {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, var(--surface) 60%);
+  box-shadow: 0 0 40px rgba(99,102,241,0.12);
+}
+
+.dl-featured:hover {
+  box-shadow: 0 0 60px rgba(99,102,241,0.22);
+  transform: translateY(-3px);
+}
+
+.dl-soon {
+  opacity: 0.55;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.dl-soon:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
+}
+
+.dl-coming-badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.dl-os-icon {
+  width: 68px; height: 68px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.dl-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.dl-version {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.dl-btn {
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.dl-btn-soon {
+  font-size: 13px;
+  padding: 10px 20px;
+}
+
+.dl-soon-label {
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.dl-alt-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--border2);
+  transition: color var(--transition);
+}
+
+.dl-alt-link:hover { color: var(--accent); }
+
+.dl-meta-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.dl-cloud-cta {
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  padding-top: 12px;
+}
+
+.dl-cloud-link {
+  color: var(--accent);
+  margin-left: 6px;
+  transition: color var(--transition);
+}
+
+.dl-cloud-link:hover { color: var(--text); }
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1024px) {
@@ -1445,6 +1609,7 @@ footer {
   .steps-flow::before { display: none; }
   .pricing-grid     { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto 60px; }
   .testimonials     { grid-template-columns: 1fr; }
+  .dl-grid          { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto 40px; }
 }
 
 @media (max-width: 768px) {

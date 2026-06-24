@@ -204,10 +204,14 @@ class SkillDownloader:
         return sentinel
 
     def _verify_sha256(self, data: bytes, expected: str) -> bool:
-        """Return True iff SHA-256(data) == expected (hex)."""
+        """Return True iff SHA-256(data) == expected (hex).
+
+        Rejects tarballs whose registry entry carries no hash — a missing
+        digest is a red flag, not a reason to proceed.
+        """
         if not expected:
-            log.warning("downloader: no SHA-256 in registry entry — skipping digest check")
-            return True  # registry entry has no hash; allow but log
+            log.error("downloader: registry entry has no SHA-256 — rejecting unsigned tarball")
+            return False
         actual = hashlib.sha256(data).hexdigest()
         return actual == expected.lower()
 
@@ -227,8 +231,8 @@ class SkillDownloader:
         signature_hex: str = skill.get("signature", "")
 
         if not signature_hex:
-            log.warning("downloader: no signature in registry entry for %s — skipping", name)
-            return True
+            log.error("downloader: registry entry for %s has no Ed25519 signature — rejecting", name)
+            return False
 
         message = f"{name}|{version}|{sha256}".encode()
 

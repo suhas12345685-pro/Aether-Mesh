@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import signal
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -102,14 +104,68 @@ class Heartbeat:
             self._ledger_path.parent.mkdir(parents=True, exist_ok=True)
             existing = {"handled": [], "log": []}
             if self._ledger_path.exists():
-                existing = json.loads(self._ledger_path.read_text("utf-8"))
+                try:
+                    existing = json.loads(self._ledger_path.read_text("utf-8"))
+                except json.JSONDecodeError:
+                    log.warning("ledger corrupt; resetting: %s", self._ledger_path)
             existing["handled"] = sorted(self._seen)
             existing.setdefault("log", []).append(
                 {"ts": time.time(), "task": task_key, **deliverable}
             )
-            self._ledger_path.write_text(json.dumps(existing, indent=2), "utf-8")
-        except (OSError, json.JSONDecodeError) as exc:
+            # Prune log entries older than 7 days to prevent unbounded growth.
+            cutoff = time.time() - 7 * 86400
+            existing["log"] = [e for e in existing["log"] if e.get("ts", 0) >= cutoff]
+            # Atomic write: write to a sibling tmp file then rename so a crash
+            # mid-write never leaves a partial/corrupt ledger on disk.
+            self._write_ledger_atomic(existing)
+        except OSError as exc:
             log.warning("could not persist ledger: %s", exc)
+
+    def _write_ledger_atomic(self, data: dict) -> None:
+        """Write *data* to the ledger atomically (tmp → rename)."""
+        parent = self._ledger_path.parent
+        parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=parent, prefix=".ledger-", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, indent=2)
+            # os.replace is atomic on POSIX; best-effort on Windows (same volume).
+            os.replace(tmp_path, self._ledger_path)
+        except Exception:
+            # Clean up the orphaned tmp file if the rename fails.
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+
+    # -- skill injection helper ----------------------------------------------
+    def _maybe_inject_and_retry(
+        self,
+        deliverable: Deliverable,
+        task,
+        channel,
+        *,
+        dry_run: bool = False,
+    ) -> Deliverable:
+        """If *deliverable* signalled ToolNotFound, attempt skill injection then retry once."""
+        if not (deliverable.tool_not_found and self._skill_compiler and deliverable.missing_tool):
+            return deliverable
+        tool = deliverable.missing_tool
+        log.info("ToolNotFound for '%s' — attempting skill injection.", tool)
+        try:
+            if self._skill_compiler.acquire(tool):
+                log.info("Skill '%s' injected — retrying task.", tool)
+                deliverable = produce_and_push(
+                    self.brain,
+                    channel,
+                    task,
+                    self_correct_passes=self.cfg.self_correct_passes,
+                    dry_run=dry_run,
+                )
+        except Exception as exc:
+            log.exception("Skill injection failed for '%s': %s", tool, exc)
+        return deliverable
 
     # -- one beat ------------------------------------------------------------
     def beat(self, *, dry_run: bool = False) -> dict:
@@ -145,20 +201,9 @@ class Heartbeat:
                     self_correct_passes=self.cfg.self_correct_passes,
                     dry_run=dry_run,
                 )
-                if deliverable.tool_not_found and self._skill_compiler and deliverable.missing_tool:
-                    log.info("ToolNotFound encountered for '%s'. Attempting skill injection...", deliverable.missing_tool)
-                    try:
-                        if self._skill_compiler.acquire(deliverable.missing_tool):
-                            log.info("Skill '%s' successfully injected. Retrying task.", deliverable.missing_tool)
-                            deliverable = produce_and_push(
-                                self.brain,
-                                self.channels,
-                                task,
-                                self_correct_passes=self.cfg.self_correct_passes,
-                                dry_run=dry_run,
-                            )
-                    except Exception as exc:
-                        log.exception("Skill injection failed for '%s': %s", deliverable.missing_tool, exc)
+                deliverable = self._maybe_inject_and_retry(
+                    deliverable, task, self.channels, dry_run=dry_run
+                )
                 if deliverable.delivered:
                     summary["delivered"] += 1
                     self._delivered_today += 1
@@ -227,20 +272,9 @@ class Heartbeat:
                     self_correct_passes=self.cfg.self_correct_passes,
                     dry_run=dry_run,
                 )
-                if deliverable.tool_not_found and self._skill_compiler and deliverable.missing_tool:
-                    log.info("ToolNotFound encountered for email task: '%s'. Attempting skill injection...", deliverable.missing_tool)
-                    try:
-                        if self._skill_compiler.acquire(deliverable.missing_tool):
-                            log.info("Skill '%s' successfully injected for email task. Retrying.", deliverable.missing_tool)
-                            deliverable = produce_and_push(
-                                self.brain,
-                                self.email_ch,
-                                task,
-                                self_correct_passes=self.cfg.self_correct_passes,
-                                dry_run=dry_run,
-                            )
-                    except Exception as exc:
-                        log.exception("Skill injection failed for '%s': %s", deliverable.missing_tool, exc)
+                deliverable = self._maybe_inject_and_retry(
+                    deliverable, task, self.email_ch, dry_run=dry_run
+                )
                 if deliverable.delivered:
                     summary["delivered"] += 1
                     self._delivered_today += 1
@@ -289,20 +323,9 @@ class Heartbeat:
                     self_correct_passes=self.cfg.self_correct_passes,
                     dry_run=dry_run,
                 )
-                if deliverable.tool_not_found and self._skill_compiler and deliverable.missing_tool:
-                    log.info("ToolNotFound encountered for SMS task: '%s'. Attempting skill injection...", deliverable.missing_tool)
-                    try:
-                        if self._skill_compiler.acquire(deliverable.missing_tool):
-                            log.info("Skill '%s' successfully injected for SMS task. Retrying.", deliverable.missing_tool)
-                            deliverable = produce_and_push(
-                                self.brain,
-                                self.sms_ch,
-                                task,
-                                self_correct_passes=self.cfg.self_correct_passes,
-                                dry_run=dry_run,
-                            )
-                    except Exception as exc:
-                        log.exception("Skill injection failed for '%s': %s", deliverable.missing_tool, exc)
+                deliverable = self._maybe_inject_and_retry(
+                    deliverable, task, self.sms_ch, dry_run=dry_run
+                )
                 if deliverable.delivered:
                     summary["delivered"] += 1
                     self._delivered_today += 1

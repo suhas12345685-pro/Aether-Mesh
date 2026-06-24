@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Aether Mesh — The world's first synthetic employee. An autonomous AI agent that joins your Slack, reads messages, detects open tasks, and delivers results. No prompt needed." />
-  <title>Aether Mesh — The Synthetic Employee</title>
+  <meta name="description" content="Aether Mesh — Your AI employee, powered by your own model. Monitors Slack, Teams, WhatsApp, email, and SMS. Detects tasks. Delivers results. Your data never leaves your infrastructure." />
+  <meta property="og:title" content="Aether Mesh — Your AI Employee. Your Data Never Leaves." />
+  <meta property="og:description" content="Bring your own LLM. Aether provides the body — multi-channel presence, heartbeat loop, self-correction, skill injection. Your model, your API key, your data sovereignty." />
+  <meta property="og:type" content="website" />
+  <title>Aether Mesh — Your AI Employee, Powered by Your Own Model</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://aether-mesh-production.up.railway.app/style.css" />
 </head>
 <body>
 
@@ -32,11 +35,12 @@
     <ul class="nav-links" role="list">
       <li><a href="#how">Product</a></li>
       <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#download">Download</a></li>
       <li><a href="#" onclick="return false;">Docs</a></li>
-      <li><a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://github.com/aethermesh/aether-mesh" target="_blank" rel="noopener noreferrer">GitHub</a></li>
     </ul>
     <div class="nav-spacer"></div>
-    <a href="#pricing" class="btn-nav-cta">
+    <a href="#download" class="btn-nav-cta">
       Get Started →
     </a>
   </div>
@@ -57,20 +61,21 @@
         </div>
 
         <h1 class="hero-h1">
-          The World's First<br>
-          <span class="gradient-word">Synthetic Employee</span>
+          Your AI Employee —<br>
+          <span class="gradient-word">Your Model. Your Data.</span>
         </h1>
 
         <p class="hero-sub">
-          An autonomous AI agent that joins your Slack, reads your team's messages,
-          detects open tasks — and just&hellip; does them. No prompt needed.
+          An autonomous digital worker that monitors your Slack, Teams, WhatsApp,
+          email, and SMS &mdash; detects open tasks and delivers results, without a
+          single prompt. Powered by <em>your</em> model. Your data never leaves your infrastructure.
         </p>
 
         <div class="hero-ctas">
-          <a href="#pricing" class="btn-primary">
+          <a href="#download" class="btn-primary">
             ⬇&nbsp; Download the App
           </a>
-          <a href="#pricing" class="btn-ghost">
+          <a href="https://aether-mesh-production.up.railway.app/dashboard" class="btn-ghost">
             ☁&nbsp; Deploy on Cloud
           </a>
         </div>
@@ -103,7 +108,7 @@
           ✅ Task delivered to #dev
         </div>
         <div class="terminal-floating tf-bottom" aria-hidden="true">
-          🧠 Brain: Claude 3.5 Sonnet
+          🔒 BYOB: Your API key, your data
         </div>
       </div>
 
@@ -341,7 +346,7 @@
             </button>
           </div>
         </div>
-        
+
         <div class="config-section">
           <span class="config-heading">2. Choose deployment mode</span>
           <div class="pill-group" id="deploy-pills">
@@ -358,7 +363,7 @@
       <div class="advisor-hint" id="advisor-hint">
         🖥️ Laptop / PC deployment uses our Tauri v2 app with secure local Docker/WSL2 sandboxing.
       </div>
-      
+
       <div class="annual-badge" style="margin-top: 16px; margin-left: 0; justify-content: center; align-self: center;">
         🎁 Save 20% with annual billing
       </div>
@@ -368,14 +373,14 @@
 
       <!-- Intern -->
       <div class="price-card">
-        <div class="plan-name">Intern</div>
+        <div class="plan-name">Starter</div>
         <div class="plan-price">
-          <div class="price-num" id="price-intern">$19</div>
-          <div class="price-period" id="period-intern">/month</div>
+          <div class="price-num" id="price-starter">$19</div>
+          <div class="price-period" id="period-starter">/month</div>
         </div>
-        <div class="cloud-delta hidden" id="cloud-delta-intern">+ $15/mo cloud hosting</div>
+        <div class="cloud-delta hidden" id="cloud-delta-starter">+ $15/mo cloud hosting</div>
         <p class="plan-desc">
-          Perfect for solo builders and small teams automating their first workflows.
+          For early-stage startups and small agencies automating their first workflows.
         </p>
         <ul class="plan-features">
           <li><span class="feat-check" aria-hidden="true">✓</span> 3 watched channels</li>
@@ -385,20 +390,20 @@
           <li><span class="feat-check" aria-hidden="true">✓</span> 60s heartbeat</li>
           <li><span class="feat-check" aria-hidden="true">✓</span> Local vector memory</li>
         </ul>
-        <a href="dashboard.html" class="plan-cta">Get Started →</a>
+        <a href="https://aether-mesh-production.up.railway.app/dashboard" class="plan-cta">Get Started →</a>
       </div>
 
       <!-- Manager (featured) -->
       <div class="price-card featured">
         <div class="popular-badge">Most Popular</div>
-        <div class="plan-name">Manager</div>
+        <div class="plan-name">Growth</div>
         <div class="plan-price">
-          <div class="price-num" id="price-manager">$49</div>
-          <div class="price-period" id="period-manager">/month</div>
+          <div class="price-num" id="price-growth">$49</div>
+          <div class="price-period" id="period-growth">/month</div>
         </div>
-        <div class="cloud-delta hidden" id="cloud-delta-manager">+ $29/mo cloud hosting</div>
+        <div class="cloud-delta hidden" id="cloud-delta-growth">+ $29/mo cloud hosting</div>
         <p class="plan-desc">
-          For growing teams that need multi-channel coverage and advanced automation.
+          For scaling startups and tech teams that need multi-channel coverage and advanced automation.
         </p>
         <ul class="plan-features">
           <li><span class="feat-check" aria-hidden="true">✓</span> Unlimited channels</li>
@@ -410,7 +415,7 @@
           <li><span class="feat-check" aria-hidden="true">✓</span> Persistent vector memory</li>
           <li><span class="feat-check" aria-hidden="true">✓</span> Priority support</li>
         </ul>
-        <a href="dashboard.html" class="plan-cta">Get Started →</a>
+        <a href="https://aether-mesh-production.up.railway.app/dashboard" class="plan-cta">Get Started →</a>
       </div>
 
       <!-- Enterprise -->
@@ -480,49 +485,54 @@
 
       <div class="platform-logos stagger-children" role="list" aria-label="Supported platforms">
 
-        <!-- Windows -->
-        <div class="platform-logo" role="listitem">
+        <!-- Windows — available -->
+        <a href="#download" class="platform-logo platform-logo-available" role="listitem" aria-label="Download for Windows">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.851" fill="#00ADEF"/>
           </svg>
           <span>Windows</span>
-        </div>
+          <span class="platform-badge">Available</span>
+        </a>
 
-        <!-- macOS -->
+        <!-- macOS — coming soon -->
         <div class="platform-logo" role="listitem">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.701z" fill="#999"/>
           </svg>
           <span>macOS</span>
+          <span class="platform-badge platform-badge-soon">Soon</span>
         </div>
 
-        <!-- Linux -->
+        <!-- Linux — coming soon -->
         <div class="platform-logo" role="listitem">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.113.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" fill="#999"/>
           </svg>
           <span>Linux</span>
+          <span class="platform-badge platform-badge-soon">Soon</span>
         </div>
 
-        <!-- Android -->
+        <!-- Android — coming soon -->
         <div class="platform-logo" role="listitem">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0729L4.841 5.4207a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 10.1902.3432 13.2569.3432 16.9024h23.3138c0-3.6455-2.3457-6.7122-5.7595-8.5810" fill="#3DDC84"/>
           </svg>
           <span>Android</span>
+          <span class="platform-badge platform-badge-soon">Soon</span>
         </div>
 
-        <!-- Docker -->
-        <div class="platform-logo" role="listitem">
+        <!-- Docker — available -->
+        <a href="https://aether-mesh-production.up.railway.app/dashboard" class="platform-logo platform-logo-available" role="listitem" aria-label="Deploy via Docker">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.186.186 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.483 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z" fill="#2496ED"/>
           </svg>
           <span>Docker</span>
-        </div>
+          <span class="platform-badge">Cloud</span>
+        </a>
 
       </div>
 
-      <a href="#pricing" class="platforms-cloud-cta">
+      <a href="https://aether-mesh-production.up.railway.app/dashboard" class="platforms-cloud-cta">
         ☁️ &nbsp;Or deploy to our cloud in one click &nbsp;→
       </a>
     </div>
@@ -615,6 +625,87 @@
 </section>
 
 <!-- ============================================================
+     DOWNLOAD
+     ============================================================ -->
+<div class="section-divider"></div>
+
+<section id="download">
+  <div class="container">
+    <div class="dl-inner fade-up">
+      <div class="section-eyebrow" style="justify-content:center;">⬇ Download</div>
+      <h2 class="section-h2" style="text-align:center;">Get Aether Mesh</h2>
+      <p class="section-lead" style="text-align:center;margin:0 auto 52px;max-width:560px;">
+        Native desktop app — your synthetic employee runs locally,
+        keeps your API keys private in the OS vault, and never sleeps.
+      </p>
+
+      <div class="dl-grid">
+
+        <!-- Windows — AVAILABLE -->
+        <div class="dl-card dl-featured">
+          <div class="dl-os-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.851" fill="#00ADEF"/>
+            </svg>
+          </div>
+          <h3 class="dl-title">Windows</h3>
+          <p class="dl-version">Version 0.1.0 &middot; x64 &middot; Windows 10+</p>
+          <a href="https://aether-mesh-production.up.railway.app/api/download/windows-exe" class="btn-primary dl-btn">
+            ⬇&nbsp; Download .exe
+          </a>
+          <a href="https://aether-mesh-production.up.railway.app/api/download/windows-msi" class="dl-alt-link">
+            Also available as .msi installer
+          </a>
+          <div class="dl-meta-chips">
+            <span class="chip">🛡 Runs Locally</span>
+            <span class="chip">🔒 OS Keychain</span>
+            <span class="chip">🐳 Docker Sandbox</span>
+          </div>
+        </div>
+
+        <!-- macOS — COMING SOON -->
+        <div class="dl-card dl-soon">
+          <div class="dl-coming-badge">Coming Soon</div>
+          <div class="dl-os-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none">
+              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.701z" fill="#888"/>
+            </svg>
+          </div>
+          <h3 class="dl-title">macOS</h3>
+          <p class="dl-version">Apple Silicon + Intel</p>
+          <span class="dl-soon-label">Notify me when ready</span>
+          <a href="mailto:hello@aethermesh.app?subject=Notify%20me%3A%20macOS" class="btn-ghost dl-btn dl-btn-soon">
+            Get Notified →
+          </a>
+        </div>
+
+        <!-- Linux — COMING SOON -->
+        <div class="dl-card dl-soon">
+          <div class="dl-coming-badge">Coming Soon</div>
+          <div class="dl-os-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none">
+              <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.113.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" fill="#888"/>
+            </svg>
+          </div>
+          <h3 class="dl-title">Linux</h3>
+          <p class="dl-version">.deb &middot; .rpm &middot; AppImage</p>
+          <span class="dl-soon-label">Notify me when ready</span>
+          <a href="mailto:hello@aethermesh.app?subject=Notify%20me%3A%20Linux" class="btn-ghost dl-btn dl-btn-soon">
+            Get Notified →
+          </a>
+        </div>
+
+      </div>
+
+      <div class="dl-cloud-cta">
+        <span>Don't want to install?</span>
+        <a href="https://aether-mesh-production.up.railway.app/dashboard" class="dl-cloud-link">Deploy to cloud in one click &nbsp;→</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
      FOOTER
      ============================================================ -->
 <footer>
@@ -627,8 +718,8 @@
             <span>Aether Mesh</span>
           </div>
           <p class="footer-brand-desc">
-            The synthetic employee that watches your channels, detects tasks,
-            and delivers results — 24/7, no prompts required.
+            Your AI employee, powered by your own model — multi-channel presence,
+            proactive task delivery, full data sovereignty. 24/7, no prompts required.
           </p>
         </div>
 
@@ -639,11 +730,12 @@
             <a href="#byob">Architecture</a>
             <a href="#pricing">Pricing</a>
             <a href="#platforms">Platforms</a>
+            <a href="#download">Download</a>
           </div>
           <div class="footer-link-col">
             <h4>Developers</h4>
             <a href="#">Documentation</a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/aethermesh/aether-mesh" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="#">API Reference</a>
             <a href="#">Changelog</a>
           </div>

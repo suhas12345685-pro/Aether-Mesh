@@ -1,18 +1,18 @@
 // Subscription tiers. Each tier maps to an Aether Core execution profile and a
 // set of body capabilities the Infrastructure layer will provision.
 export const TIERS = {
-  intern: {
-    id: "intern",
-    name: "Intern Tier",
+  starter: {
+    id: "starter",
+    name: "Starter Tier",
     audience: "Freelancers, independent developers, students",
     priceUsdMonthly: 49,
     coreProfile: "lite", // slow heartbeat, single self-correct pass
     capabilities: { phone: true, email: true, browser: false, vm: false, skillCompile: false },
     limits: { watchedChannels: 1, deliverablesPerDay: 25 },
   },
-  manager: {
-    id: "manager",
-    name: "Manager Tier",
+  growth: {
+    id: "growth",
+    name: "Growth Tier",
     audience: "Fast-growing startups, technology teams, agencies",
     priceUsdMonthly: 299,
     coreProfile: "power", // fast heartbeat, multi-pass verification

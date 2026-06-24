@@ -24,7 +24,7 @@ pub fn load_secret(key: &str) -> Result<Option<String>> {
 /// Remove a secret from the OS keychain.
 pub fn delete_secret(key: &str) -> Result<()> {
     let entry = Entry::new(SERVICE_NAME, key)?;
-    match entry.delete_credential() {
+    match entry.delete_password() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),
         Err(e) => Err(e.into()),

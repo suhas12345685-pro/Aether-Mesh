@@ -60,7 +60,11 @@ export class Supervisor {
     try {
       active = new Set(await this.deps.listActive());
     } catch (err) {
-      this.deps.log("reconcile: cannot reach platform:", err.message);
+      if (err.statusCode === 401 || err.statusCode === 403) {
+        this.deps.log("reconcile: platform auth rejected (check PLATFORM_ADMIN_TOKEN):", err.message);
+      } else {
+        this.deps.log("reconcile: cannot reach platform:", err.message);
+      }
       return;
     }
     for (const id of active) if (!this.workers.has(id)) await this.startWorker(id);

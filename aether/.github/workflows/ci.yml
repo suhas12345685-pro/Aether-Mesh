@@ -38,7 +38,7 @@ jobs:
       - name: Aether Core tests
         run: |
           cd core
-          for t in test_smoke test_reliability test_contracts test_entitlements; do
+          for t in test_smoke test_reliability test_contracts test_entitlements test_skills; do
             echo "== $t =="
             python "tests/$t.py"
           done

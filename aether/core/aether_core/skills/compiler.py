@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 import sys
 import time
@@ -39,6 +40,16 @@ from .injector import SkillInjector
 from .registry import SkillRegistry
 
 log = logging.getLogger("aether.skills.compiler")
+
+# Allowlist for pip dependency names supplied by the skill registry.
+# Matches: optional extras, version specifiers, and URL-based deps are all
+# rejected — only simple PyPI package names with optional version pins.
+# e.g. "requests", "httpx>=0.27", "my-pkg==1.2.3" are OK.
+# "requests; python_version>'3.9'", "../evil", "git+https://..." are rejected.
+_SAFE_DEP_RE = re.compile(
+    r"^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?"  # package name
+    r"(\s*[><=!]{1,2}\s*[A-Za-z0-9.*+]+)?$"        # optional version specifier
+)
 
 
 class SkillCompiler:
@@ -155,6 +166,16 @@ class SkillCompiler:
             log.debug("compiler: _install_deps called on Lite node — skipping %s", requires)
             return
 
+        # Validate each dependency against the allowlist before passing to pip.
+        # A compromised registry entry must not be able to inject arbitrary
+        # subprocess arguments (e.g. "--index-url https://evil.example/").
+        for dep in requires:
+            if not _SAFE_DEP_RE.match(dep.strip()):
+                raise SkillInstallError(
+                    skill["name"],
+                    f"dependency name {dep!r} failed safety check — only simple "
+                    "PyPI names with optional version pins are allowed",
+                )
         log.info("compiler: installing deps for %s: %s", skill["name"], requires)
         cmd = [sys.executable, "-m", "pip", "install", "--quiet", *requires]
         try:

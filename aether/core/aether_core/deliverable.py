@@ -7,6 +7,7 @@ then drops it back into the originating channel "untouched by human hands".
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from .bridges.hermes_bridge import HermesBridge, HermesUnavailable
@@ -21,8 +22,6 @@ _SOLVER_SYSTEM = (
     "exactly what is blocking and propose the next step."
 )
 
-
-import re
 
 @dataclass
 class Deliverable:

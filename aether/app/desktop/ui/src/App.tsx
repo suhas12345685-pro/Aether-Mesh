@@ -17,6 +17,7 @@ export interface AppConfig {
   tier: string;
   channels: string[];
   configured: boolean;
+  platform_url: string;
 }
 
 export default function App() {

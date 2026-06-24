@@ -2,7 +2,9 @@ use crate::sandbox::{SandboxManager, SandboxStatus};
 use crate::vault;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tauri::{AppHandle, Emitter, Window};
+use tauri::{AppHandle, Emitter, WebviewWindow};
+
+const DEFAULT_PLATFORM_URL: &str = "https://aether-mesh-production.up.railway.app";
 
 /// Persisted application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +17,12 @@ pub struct AppConfig {
     pub tier: String,
     pub channels: Vec<String>,
     pub configured: bool,
+    #[serde(default = "default_platform_url")]
+    pub platform_url: String,
+}
+
+fn default_platform_url() -> String {
+    DEFAULT_PLATFORM_URL.to_string()
 }
 
 impl Default for AppConfig {
@@ -28,6 +36,7 @@ impl Default for AppConfig {
             tier: "starter".to_string(),
             channels: vec![],
             configured: false,
+            platform_url: DEFAULT_PLATFORM_URL.to_string(),
         }
     }
 }
@@ -113,7 +122,7 @@ pub async fn is_docker_available() -> bool {
 
 /// Pull the aether-stack image and emit progress events to the frontend.
 #[tauri::command]
-pub async fn pull_image(window: Window) -> Result<(), String> {
+pub async fn pull_image(window: WebviewWindow) -> Result<(), String> {
     let window_clone = window.clone();
     SandboxManager::pull_image(move |line| {
         let _ = window_clone.emit("pull-progress", &line);
@@ -130,10 +139,30 @@ pub async fn get_logs(tenant_id: String, tail: u32) -> Vec<String> {
     SandboxManager::get_logs(&tenant_id, tail).await
 }
 
-/// Open the Aether web dashboard in the default browser.
+/// Ping the platform health endpoint. Returns true if reachable.
 #[tauri::command]
-pub fn open_dashboard(_app: AppHandle) {
-    let _ = open::that("http://localhost:8080");
+pub async fn platform_ping(platform_url: String) -> bool {
+    let url = format!("{}/health", platform_url.trim_end_matches('/'));
+    match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+    {
+        Ok(client) => client.get(&url).send().await.map(|r| r.status().is_success()).unwrap_or(false),
+        Err(_) => false,
+    }
+}
+
+/// Open the Aether web dashboard in the default browser.
+/// Uses the configured platform_url; falls back to localhost for local mode.
+#[tauri::command]
+pub async fn open_dashboard(_app: AppHandle) {
+    let cfg = get_config().await;
+    let url = if cfg.platform_url.is_empty() {
+        "http://localhost:8080".to_string()
+    } else {
+        cfg.platform_url.clone()
+    };
+    let _ = open::that(url);
 }
 
 /// Save a secret to the OS vault.

@@ -22,14 +22,14 @@ import {
 import { str } from "../../shared/validate.mjs";
 import { browserAction, closeAllSessions } from "./browser.mjs";
 import { sendEmail } from "./email.mjs";
-import { parseInbound, parseTwilio, verifyMailgunSignature, verifyTwilioSignature } from "./inbound.mjs";
+import { parseInbound, parseTwilio, verifyMailgunSignature, verifySendGridKey, verifyTwilioSignature } from "./inbound.mjs";
 import { Provisioner } from "./provisioner.mjs";
 import { searchNumbers, sendSms } from "./twilio.mjs";
 import { vmExec, vmStatus } from "./vms.mjs";
 
 const ADMIN_TOKEN = process.env.INFRA_ADMIN_TOKEN || "";
 const provisioner = new Provisioner();
-const limiter = new RateLimiter({ capacity: 120, refillPerSec: 2 });
+const limiter = new RateLimiter({ capacity: 120, refillPerSec: 2, name: "infra:main" });
 setInterval(() => limiter.sweep(), 60_000).unref?.();
 
 class HttpError extends Error {
@@ -49,12 +49,12 @@ function requireCapability(tenant, sub) {
 }
 
 // Returns the caller role or throws 401/403. scope: "admin" | "tenant".
-function authorize(req, scope, tenantId) {
+async function authorize(req, scope, tenantId) {
   if (!ADMIN_TOKEN) return "dev"; // no admin token configured => dev open mode
   const token = bearer(req);
   if (!token) throw new HttpError(401, "missing bearer token");
   if (safeEqual(token, ADMIN_TOKEN)) return "admin";
-  if (scope === "tenant" && tenantId && provisioner.verifyToken(tenantId, token)) {
+  if (scope === "tenant" && tenantId && await provisioner.verifyToken(tenantId, token)) {
     return "tenant";
   }
   throw new HttpError(403, "forbidden");
@@ -69,7 +69,7 @@ async function route(req, res) {
   }
   if (req.method === "GET" && url.pathname === "/ready") {
     try {
-      provisioner.store.ping();
+      await provisioner.store.ping();
       return sendJson(res, 200, { ready: true });
     } catch (err) {
       return sendJson(res, 503, { ready: false, error: err.message });
@@ -81,16 +81,17 @@ async function route(req, res) {
   }
 
   // rate limit everything else by client IP
-  if (!limiter.check(clientIp(req))) return sendJson(res, 429, { error: "rate limited" });
+  if (!(await limiter.check(clientIp(req)))) return sendJson(res, 429, { error: "rate limited" });
 
   if (req.method === "GET" && url.pathname === "/audit") {
-    authorize(req, "admin");
-    return sendJson(res, 200, provisioner.store.recentAudit());
+    await authorize(req, "admin");
+    const limit = Math.min(Number(url.searchParams.get("limit") || 100), 1000);
+    return sendJson(res, 200, await provisioner.store.recentAudit(limit));
   }
 
   // GET /numbers/available  — search available Twilio numbers (admin)
   if (req.method === "GET" && url.pathname === "/numbers/available") {
-    authorize(req, "admin");
+    await authorize(req, "admin");
     const areaCode = url.searchParams.get("areaCode") || process.env.TWILIO_AREA_CODE || "415";
     const country = url.searchParams.get("country") || "US";
     const limit = Math.min(Number(url.searchParams.get("limit") || 10), 20);
@@ -99,7 +100,7 @@ async function route(req, res) {
 
   // POST /provision  (admin)
   if (req.method === "POST" && url.pathname === "/provision") {
-    authorize(req, "admin");
+    await authorize(req, "admin");
     const body = await readJson(req);
     const tenantId = str(body, "tenantId", { max: 64 });
     const t = await provisioner.provision(tenantId, {
@@ -125,13 +126,19 @@ async function route(req, res) {
       if (!verifyMailgunSignature(fields.timestamp, fields.token, fields.signature)) {
         return sendJson(res, 403, { error: "invalid webhook signature" });
       }
+    } else {
+      // Non-Mailgun (SendGrid or custom): check shared secret if SENDGRID_INBOUND_KEY is set.
+      const sgKey = req.headers["x-aether-inbound-key"] || url.searchParams.get("key") || "";
+      if (!verifySendGridKey(sgKey)) {
+        return sendJson(res, 403, { error: "invalid inbound key" });
+      }
     }
     const msg = parseInbound(fields, req);
     if (!msg.toAddr) return sendJson(res, 400, { error: "missing recipient" });
-    const tenant = provisioner.store.getByEmailAddress(msg.toAddr);
+    const tenant = await provisioner.store.getByEmailAddress(msg.toAddr);
     if (!tenant) return sendJson(res, 404, { error: "no tenant for that address" });
-    provisioner.store.queueInbound(tenant.id, msg);
-    provisioner.store.audit("email_received", tenant.id, { from: msg.fromAddr, subject: msg.subject });
+    await provisioner.store.queueInbound(tenant.id, msg);
+    await provisioner.store.audit("email_received", tenant.id, { from: msg.fromAddr, subject: msg.subject });
     return sendJson(res, 200, { queued: true, tenantId: tenant.id });
   }
 
@@ -146,10 +153,10 @@ async function route(req, res) {
     }
     const msg = parseTwilio(fields);
     if (!msg.toAddr) return sendJson(res, 400, { error: "missing To number" });
-    const tenant = provisioner.store.getByPhoneNumber(msg.toAddr);
+    const tenant = await provisioner.store.getByPhoneNumber(msg.toAddr);
     if (!tenant) return sendJson(res, 404, { error: "no tenant for that number" });
-    provisioner.store.queueInbound(tenant.id, msg);
-    provisioner.store.audit("sms_received", tenant.id, { from: msg.fromAddr });
+    await provisioner.store.queueInbound(tenant.id, msg);
+    await provisioner.store.audit("sms_received", tenant.id, { from: msg.fromAddr });
     return sendJson(res, 200, { queued: true, tenantId: tenant.id });
   }
 
@@ -159,71 +166,71 @@ async function route(req, res) {
     const sub = parts.slice(2).join("/");
 
     if (req.method === "GET" && !sub) {
-      authorize(req, "admin");
-      const t = provisioner.get(tenantId);
+      await authorize(req, "admin");
+      const t = await provisioner.get(tenantId);
       return t ? sendJson(res, 200, t) : sendJson(res, 404, { error: "not found" });
     }
 
     // GET /tenants/:id/inbox  — tenant polls for unread emails
     if (req.method === "GET" && sub === "inbox") {
-      authorize(req, "tenant", tenantId);
+      await authorize(req, "tenant", tenantId);
       const limit = Math.min(Number(url.searchParams.get("limit") || 20), 100);
-      return sendJson(res, 200, provisioner.store.getInbox(tenantId, limit));
+      return sendJson(res, 200, await provisioner.store.getInbox(tenantId, limit));
     }
 
     // DELETE /tenants/:id/inbox/:msgId  — acknowledge a processed message
     if (req.method === "DELETE" && parts[2] === "inbox" && parts[3]) {
-      authorize(req, "tenant", tenantId);
-      provisioner.store.ackInbound(parts[3]);
+      await authorize(req, "tenant", tenantId);
+      await provisioner.store.ackInbound(parts[3]);
       return sendJson(res, 200, { acked: true });
     }
 
     // GET /tenants/:id/sms-inbox  — tenant polls for unread SMS
     if (req.method === "GET" && sub === "sms-inbox") {
-      authorize(req, "tenant", tenantId);
+      await authorize(req, "tenant", tenantId);
       const limit = Math.min(Number(url.searchParams.get("limit") || 20), 100);
-      return sendJson(res, 200, provisioner.store.getInbox(tenantId, limit, "sms"));
+      return sendJson(res, 200, await provisioner.store.getInbox(tenantId, limit, "sms"));
     }
 
     // DELETE /tenants/:id/sms-inbox/:msgId  — acknowledge a processed SMS
     if (req.method === "DELETE" && parts[2] === "sms-inbox" && parts[3]) {
-      authorize(req, "tenant", tenantId);
-      provisioner.store.ackInbound(parts[3]);
+      await authorize(req, "tenant", tenantId);
+      await provisioner.store.ackInbound(parts[3]);
       return sendJson(res, 200, { acked: true });
     }
 
     // GET /tenants/:id/vm/status
     if (req.method === "GET" && sub === "vm/status") {
-      authorize(req, "tenant", tenantId);
+      await authorize(req, "tenant", tenantId);
       return sendJson(res, 200, await vmStatus(tenantId));
     }
 
-    authorize(req, "tenant", tenantId);
-    const tenant = provisioner.require(tenantId);
+    await authorize(req, "tenant", tenantId);
+    const tenant = await provisioner.require(tenantId);
     requireCapability(tenant, sub);
     const body = await readJson(req);
 
     if (req.method === "POST" && sub === "sms") {
       str(body, "to", { max: 32 });
       str(body, "text", { max: 1600 });
-      provisioner.store.audit("sms", tenantId, { to: body.to });
+      await provisioner.store.audit("sms", tenantId, { to: body.to });
       return sendJson(res, 200, await sendSms(tenant, body.to, body.text));
     }
     if (req.method === "POST" && sub === "email") {
       str(body, "to", { max: 254 });
       str(body, "subject", { max: 256 });
       str(body, "body", { max: 100_000 });
-      provisioner.store.audit("email", tenantId, { to: body.to });
+      await provisioner.store.audit("email", tenantId, { to: body.to });
       return sendJson(res, 200, await sendEmail(tenant, body.to, body.subject, body.body));
     }
     if (req.method === "POST" && sub === "browser") {
       str(body, "action", { max: 32 });
-      provisioner.store.audit("browser", tenantId, { action: body.action });
+      await provisioner.store.audit("browser", tenantId, { action: body.action });
       return sendJson(res, 200, await browserAction(tenantId, body.action, body.params));
     }
     if (req.method === "POST" && sub === "vm/exec") {
       str(body, "command", { max: 10_000 });
-      provisioner.store.audit("vm_exec", tenantId, {});
+      await provisioner.store.audit("vm_exec", tenantId, {});
       return sendJson(res, 200, await vmExec(tenant, body.command));
     }
   }
@@ -247,6 +254,16 @@ export function createInfraServer() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (!ADMIN_TOKEN) console.warn("[aether-infra] INFRA_ADMIN_TOKEN unset — running OPEN (dev only)");
+  if (process.env.INFRA_INBOUND_REAL === "true") {
+    if (!process.env.MAILGUN_WEBHOOK_SIGNING_KEY && !process.env.SENDGRID_INBOUND_KEY) {
+      throw new Error(
+        "MAILGUN_WEBHOOK_SIGNING_KEY or SENDGRID_INBOUND_KEY is required when INFRA_INBOUND_REAL=true"
+      );
+    }
+    if (!process.env.TWILIO_AUTH_TOKEN) {
+      throw new Error("TWILIO_AUTH_TOKEN is required when INFRA_INBOUND_REAL=true");
+    }
+  }
   const port = Number(process.env.INFRA_PORT || 8090);
   const server = createInfraServer();
   server.listen(port, () => console.log(`[aether-infra] listening on :${port}`));
@@ -254,6 +271,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log("[aether-infra] shutting down...");
     server.close();
     await closeAllSessions();
+    await provisioner.store.close();
+    const { closeRedis } = await import("../../shared/redis.mjs");
+    await closeRedis();
     process.exit(0);
   };
   process.on("SIGINT", shutdown);

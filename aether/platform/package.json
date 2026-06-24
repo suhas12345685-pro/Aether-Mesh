@@ -12,6 +12,8 @@
   "engines": { "node": ">=18" },
   "//": "Stripe is loaded dynamically only when PLATFORM_BILLING_REAL=true; the platform runs with zero installed deps otherwise.",
   "dependencies": {
-    "stripe": "^16.0.0"
+    "stripe": "^16.0.0",
+    "pg": "^8.12.0",
+    "redis": "^4.6.0"
   }
 }

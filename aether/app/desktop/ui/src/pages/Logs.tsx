@@ -64,7 +64,7 @@ export default function Logs({ config }: LogsProps) {
   };
 
   // Heuristic parser to colorize log levels
-  const parseLogLine = (line: string, index: number) => {
+  const parseLogLine = (line: string, _index: number) => {
     let type = "debug";
     let message = line;
     let timestamp = "";
